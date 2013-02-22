@@ -9,6 +9,10 @@ NOTE: THIS IS A DRAFT DOCUMENT. URIS USED HERE ARE NOT FINAL. DO NOT IMPLEMENT!
 ##Introduction
 ###Rationale
 ###Approach
+###Heirarchy
+####Registered
+####Accepted
+####Recognised
 
 ##Profile
 This section describes a profile of verbs and activity types used to run the repo. 
@@ -143,8 +147,119 @@ extension or standard document.
 </table>
 
 ###Verbs
+
 ####Extension Verbs
+The result response property may be used to explain the action taken. 
+
+#####Registered Extension: http://tincanapi.co.uk/tinrepo/verbs/registered_extension
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor registered a new verb, activity type, extension or standard document with the repository.</td>
+    <td>Anybody</td>
+    <td>An activity with any of the activity types defined in this profile</td>
+  </tr>
+</table>
+
+#####Accepted Extension: http://tincanapi.co.uk/tinrepo/verbs/accepted_extension
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor promoted a verb, activity type, extension or standard document to accepted status.</td>
+    <td>Moderators and Administrators</td>
+    <td>An activity with any of the activity types defined in this profile.</td>
+  </tr>
+</table>
+
+#####Recognised Extension: http://tincanapi.co.uk/tinrepo/verbs/recognised_extension
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor promoted a verb, activity type, extension or standard document to recognised status.</td>
+    <td>Moderators and Administrators</td>
+    <td>An activity with any of the activity types defined in this profile.</td>
+  </tr>
+</table>
+
+#####Revert Extension: http://tincanapi.co.uk/tinrepo/verbs/revert_extension
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor reverted a verb, activity type, extension or standard document to registered status.</td>
+    <td>Moderators and Administrators</td>
+    <td>An activity with any of the activity types defined in this profile.</td>
+  </tr>
+</table>
+
+#####Deprecate Extension: http://tincanapi.co.uk/tinrepo/verbs/deprecate_extension
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor set a verb, activity type, extension or standard document to deprecated status.</td>
+    <td>Moderators and Administrators</td>
+    <td>An activity with any of the activity types defined in this profile.</td>
+  </tr>
+</table>
+
 ####User Management Verbs
+
+#####Make moderator: http://tincanapi.co.uk/tinrepo/verbs/make_moderator
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor makes the object agent into a moderator. Reporting tools should 
+    process any moderator-only actions from this agent stored following the timestamp property 
+    of this statement.</td>
+    <td>Administrator only</td>
+    <td>Agent to be made into a moderator</td>
+  </tr>
+</table>
+
+#####Revoke moderator: http://tincanapi.co.uk/tinrepo/verbs/revoke_moderator
+<table>
+  <tr>
+    <th>Description</th>
+    <th>Authorised roles</th><th>Object</th>
+  </tr>
+  <tr>
+    <td>The actor revokes moderator rights. Reporting tools should 
+    not process any moderator-only actions from this agent stored following the timestamp property 
+    of this statement but should still process actions prior to this statement if the agent was
+    previously a moderator. Revoking moderator privilages from an agent who is not a moderator has no effect. </td>
+    <td>Administrator only</td>
+    <td>Moderator agent to have mdoerator rights revoked.</td>
+  </tr>
+</table>
+
+
+###Administrator account
+There is only one administrator account. 
+
+    "authority": {
+        "account": {
+            "homePage": "http://tincanapi.co.uk/tinrepo",
+            "name": "admin"
+        },
+        "objectType": "Agent"
+    }
 
 ##Components
 ###Public Interface
@@ -155,5 +270,6 @@ extension or standard document.
 
 ##Community
 ###Method of Operation
-###Moderatiors and Admins
+###Moderators and 
+###Administrator
 ###Forum
