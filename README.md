@@ -8,11 +8,50 @@ NOTE: THIS IS A DRAFT DOCUMENT. URIS USED HERE ARE NOT FINAL. DO NOT IMPLEMENT!
 
 ##Introduction
 ###Rationale
+The Tin Can community needs a central location to register verbs, activity types, extensions and standard documents 
+(known collectively as extensions). This will help to ensure interoperability because adopters will be able to see 
+what extensions are already in use so that they can be shared and that different tools can work together. It needs
+to be really easy for anybody to register extensions, but there also needs to be a mechanism for the community to 
+accept registered extensions and recognise extensions which are widely adopted. When choosing an extension the
+community will be able to see which extensions are widely in use, which have been reviewed and accepted by the community,
+which have been registered but not yet accepted and which have been deprecated in favour of another verb. 
+
+This document outlines the design of a system which will meet this need. 
+
 ###Approach
-###Heirarchy
-####Registered
-####Accepted
-####Recognised
+The system will use a Tin Can LRS as a repository which stores extension management events as statements. 
+Reporting tools will process these statements to build a list extensions. These extensions will be
+categoried as:
+
+* registered: The extension has been registered by somebody but has not yet been accepted by the community.
+* accepted: The extension has been accepted by the community and a moderator has promoted it to accepted status.
+* recognised: The extension has been recognised to have wide usage in the community and a moderator has promoted it
+to recognised status.
+* deprecated: The community has decided that this extension should not be used and have proposed an alternative. 
+A moderator has assigned it deprecated status. 
+
+The creation of moderators will also be handled by Tin Can statements issued from a single specified admin account. 
+
+The repository system will be supported by a community which will use a specified forum to discuss registered 
+extensions and agree when they should be accepted, recognised and deprecated. The community will appoint
+moderators who will carry out these agreed actions within the registry. 
+
+To support creation of the repository and supporting community, this design document will describe:
+
+* a profile of activity types and verbs to be used within extension management and user management statements
+* a specification for the component tools and which make up the repository system
+* the operating principals and processes of the supporting community.
+
+The tools which make up the repository system are:
+* a public interface for registering extensions
+* a moderator interface for accepting, recognising and deprecating extensions
+* an administrator interface for assigning moderator privillages
+* a Tin Can LRS capable of secure authentication
+* a reporting tool or reporting tools for searching the repository
+
+Note that because these tools use Tin Can, they are each completely indepedant but interoperate together. It is possible
+for any third party to develop their own version of these tools to interact with the central LRS. Equally, these tools
+can be pointed at any Tin Can compliant LRS.
 
 ##Profile
 This section describes a profile of verbs and activity types used to run the repo. 
@@ -148,7 +187,7 @@ extension or standard document.
 
 ###Verbs
 
-####Extension Verbs
+####Extension Management Verbs
 The result response property may be used to explain the action taken. 
 
 #####Registered Extension: http://tincanapi.co.uk/tinrepo/verbs/registered_extension
@@ -270,6 +309,10 @@ There is only one administrator account.
 
 ##Community
 ###Method of Operation
-###Moderators and 
+###Moderators
 ###Administrator
 ###Forum
+
+##Roadmap
+###0.1
+###0.2
