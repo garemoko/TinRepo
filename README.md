@@ -381,6 +381,13 @@ of the statement issued by the moderator
 Only when both match will the reporting tools consider the statement issued by the moderator to be authoritative. 
 
 ###LRS
+The LRS is a standard Tin Can API LRS. It provides a means for users to register so that their statements
+can be authenticated using either basic or OAuth authentication. The LRS will also accept statements 
+from unregistered users so there is no need for users to register in order to submit extensions. 
+
+The decision to accept statements from unregistered users will be revisited if required as a result
+of spam. 
+
 ###Reporting Tool(s)
 
 ##Community
