@@ -217,7 +217,7 @@ The result response property may be used to explain the action taken.
     registers the extension. When used on an extension which already has 
     accepted or recognised status, this action has no effect. This verb 
     cannot be used to revert recognised extensions to accepted status.</td>
-    <td>Moderators and Administrators</td>
+    <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
 </table>
@@ -233,7 +233,7 @@ The result response property may be used to explain the action taken.
     When used on an extension which has not been registered, this action also
     registers the extension. When used on an extension which already has 
     recognised status, this action has no effect.</td>
-    <td>Moderators and Administrators</td>
+    <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
 </table>
@@ -248,7 +248,7 @@ The result response property may be used to explain the action taken.
     <td>The actor reverted an extension to registered status. When used on an extension 
     which has not been registered, this action also register the extension. When used 
     on an extension which already has registered status, this action has no effect.</td>
-    <td>Moderators and Administrators</td>
+    <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
 </table>
@@ -263,7 +263,7 @@ The result response property may be used to explain the action taken.
     <td>The actor set an extension to deprecated status. When used on an extension which 
     has not been registered, this action also registers the extension. When used 
     on an extension which already has registered status, this action has no effect.</td>
-    <td>Moderators and Administrators</td>
+    <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
 </table>
@@ -389,6 +389,60 @@ The decision to accept statements from unregistered users will be revisited if r
 of spam. 
 
 ###Reporting Tool(s)
+The reporting tool provides a list of extensions registered with the repository. These can be 
+filtered by status or activity type and their activity names and descriptions can be searched for key words. 
+
+In order to present an accurate list, taking into account the actions of authorised moderators only, the reporting
+tool will follow the following validation proceedure in order:
+
+1. Get all statements from the LRS using the verbs defined in the profile and store them in an array.
+2. For each statement, validate that the objectType and, if relevant, activity type match the profile. 
+Remove any statements that fail this validation from the array. 
+3. For each statement using the administrator only verbs, validate that the
+authority of the statement matches the administrator account defined in the profile. Remove any statements
+that fail this validation from the array. 
+4. For each statement using moderator only verbs, get all 'make_moderator' or 'revoke_moderator' statements
+whose object matches the authority of the statement being validated. From this list, get the most recent statement
+whose timestamp is before the stored time of the statement being validated. If this statement uses a 'revoke_moderator'
+verb, remove the statement being validated from the array. If not, then the verb must be 'make_moderator', meaning
+that the authority of the statement being validated was a moderator when the statement was stored. The stored
+property is used for the statement being validated to prevent ex-moderators from continuing to issue moderator
+statements. The timestamp property is used for the user management statements to allow the administrator to
+make changes to moderator privilages for peroids of time in the past, for example to de-authorise the most recent 
+actions of a moderator whose account has been hacked. 
+
+The LRS owner may wish to peroidically run these validation rules on the LRS data and delete any invalid statements.
+
+Once a list of valid statements has been created and stored in memory, the reporting tool will remove the user management
+statements from the array. These are any statements using the 'make_moderator' or 'revoke_moderator' verbs.
+
+The array of statements can be reduced further to keep only the most recent statement about an 
+extension and include only the relevant data from the statement that needs to be presented to the user. A new array 
+will be declared to contain a colelction of repositoryItem objects with the following properties:
+
+*id
+*type
+*name
+*description
+*status
+
+id and type are URIs, name and description are language maps as defined in the Tin Can API specification and
+status is a string. 
+
+The following process will be carried out for each unique activity in the array of valid extension management 
+statements:
+
+1. Create a new repositoryItem object in the array.
+2. Populate the id, type, name and description properties using activity definition data from the LRS 
+Activity Profile API for the current activity id.
+3. Populate the status property based on the verb id of the earliest stored statement matching the current activity id.
+The table below maps verb ids to status. 
+4. For each subsquently stored statement matching the current activity id, check if the statement has any
+effect on the repositoryItem status based on the rules outlined in the profile. If it does, update the status. 
+5. Repeat step 4 until the most recent matching statement. 
+
+Once this process has been completed, the reporting tool will have a valid and concise array of data to present to
+the user. 
 
 ##Community
 ###Method of Operation
