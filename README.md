@@ -420,11 +420,11 @@ The array of statements can be reduced further to keep only the most recent stat
 extension and include only the relevant data from the statement that needs to be presented to the user. A new array 
 will be declared to contain a colelction of repositoryItem objects with the following properties:
 
-*id
-*type
-*name
-*description
-*status
+* id
+* type
+* name
+* description
+* status
 
 id and type are URIs, name and description are language maps as defined in the Tin Can API specification and
 status is a string. 
