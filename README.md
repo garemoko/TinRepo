@@ -54,7 +54,7 @@ for any third party to develop their own version of these tools to interact with
 can be pointed at any Tin Can compliant LRS.
 
 ##Profile
-This section describes a profile of verbs and activity types used to run the repo. 
+This section describes a profile of verbs and activity types used to run the repository. 
 It is NOT a list of verbs and activity types contained in the repo itself. 
 
 Currently this profile used the base URI http://tincanapi.co.uk/tinrepo/ This is subject to change. 
@@ -70,7 +70,7 @@ extension or standard document.
     <th>Activity name contents</th><th>Activity description contents</th>
   </tr>
   <tr>
-    <td>An activity representing a Tin Can Verb.</td>
+    <td>An activity representing a Tin Can verb.</td>
     <td>The verb display property</td>
     <td>A description of the verb and explanation of how it should be used.</td>
   </tr>
@@ -197,7 +197,9 @@ The result response property may be used to explain the action taken.
     <th>Authorised roles</th><th>Object</th>
   </tr>
   <tr>
-    <td>The actor registered a new verb, activity type, extension or standard document with the repository.</td>
+    <td>The actor registered a new extension with the repository.
+    When used on an extension which has already been registered, accepted, recognised or deprecated, 
+    this action has no effect.</td>
     <td>Anybody</td>
     <td>An activity with any of the activity types defined in this profile</td>
   </tr>
@@ -210,7 +212,11 @@ The result response property may be used to explain the action taken.
     <th>Authorised roles</th><th>Object</th>
   </tr>
   <tr>
-    <td>The actor promoted a verb, activity type, extension or standard document to accepted status.</td>
+    <td>The actor promoted an extension to accepted status.
+    When used on an extension which has not been registered, this action also
+    registers the extension. When used on an extension which already has 
+    accepted or recognised status, this action has no effect. This verb 
+    cannot be used to revert recognised extensions to accepted status.</td>
     <td>Moderators and Administrators</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
@@ -223,7 +229,10 @@ The result response property may be used to explain the action taken.
     <th>Authorised roles</th><th>Object</th>
   </tr>
   <tr>
-    <td>The actor promoted a verb, activity type, extension or standard document to recognised status.</td>
+    <td>The actor promoted an extension to recognised status.
+    When used on an extension which has not been registered, this action also
+    registers the extension. When used on an extension which already has 
+    recognised status, this action has no effect.</td>
     <td>Moderators and Administrators</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
@@ -236,7 +245,9 @@ The result response property may be used to explain the action taken.
     <th>Authorised roles</th><th>Object</th>
   </tr>
   <tr>
-    <td>The actor reverted a verb, activity type, extension or standard document to registered status.</td>
+    <td>The actor reverted an extension to registered status. When used on an extension 
+    which has not been registered, this action also register the extension. When used 
+    on an extension which already has registered status, this action has no effect.</td>
     <td>Moderators and Administrators</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
@@ -249,7 +260,9 @@ The result response property may be used to explain the action taken.
     <th>Authorised roles</th><th>Object</th>
   </tr>
   <tr>
-    <td>The actor set a verb, activity type, extension or standard document to deprecated status.</td>
+    <td>The actor set an extension to deprecated status. When used on an extension which 
+    has not been registered, this action also registers the extension. When used 
+    on an extension which already has registered status, this action has no effect.</td>
     <td>Moderators and Administrators</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
@@ -290,7 +303,9 @@ The result response property may be used to explain the action taken.
 
 
 ###Administrator account
-There is only one administrator account. 
+There is one administrator account which is used to assign and revoke moderator privillages. The current
+administrator account is listed below. The reporting tools should only process administrator only actions
+sent with this authority.
 
     "authority": {
         "account": {
@@ -301,9 +316,70 @@ There is only one administrator account.
     }
 
 ##Components
+The tools which make up the repository system are:
+* a public interface for registering extensions
+* a moderator interface for accepting, recognising and deprecating extensions
+* an administrator interface for assigning moderator privillages
+* a Tin Can LRS capable of secure authentication
+* a reporting tool or reporting tools for searching the repository
+
+This section explains the function and purpose of each of these tools. 
+
 ###Public Interface
+The public interface is open to anybody and is used to register extensions. 
+This interface allows the user to enter the actor and object details of the statement. 
+The verb is always 'registered_extension' described in the profile above and the object
+is always an activity with one of the activity types also described above. 
+
 ###Moderator Interface
+The moderator interface is designed for use by moderators, although access to
+this interface does not need to be restricted. This interface provides a 
+list of extensions held within the repository, so may be a specialised version
+of the reporting tools.
+
+The moderator interface will allow users to find and select an extension and
+then perform one of the following actions on it using the verbs in the profile above:
+* promote registered or deprecated extensions to accepted status
+* promote registered, deprecated or accepted extensions to recognised status
+* set any extension to deprecated status
+* revert any extension to registered status.
+
+The moderator interface will require users to enter basic or OAuth credentials so
+that the authority of statements issued from the moderator interface can be 
+determined by the reporting tools. The reporting tools will ignore any moderator
+statements not sent with the authority of a moderator. Reporting tools can calculate
+a list of moderators at a given point in time based on statements issued with
+the authority of the administrator via the administrator interface. 
+
+
 ###Admin Interface
+The admin interface is designed for use by the holder of the administrator 
+account. Again, access to this interface does not need to be restricted 
+because the admin interface will require users to enter basic or OAuth credentials so
+that the authority of statements issued can be determined by the reporting tools. 
+The reporting tools will ignore any administrator statements not sent with the 
+authority of the administrator. The details of the administrator account are defined
+in the profile above.
+
+The admin interface allows the administrator to grant moderator privilages to agents. 
+This is done by issuing statements with the 'make_moderator' verb described in the 
+profile above. The object of the statements is an agent.
+
+The admin interface also provides a list of agents who have been the object of a 
+'make_moderator' verb more recently than they have been the object of a 'revoke_moderator'
+verb. This is those agents who have been given moderator privilages but have not had them revoked,
+and also allows for agents who have had moderator privilages revoked and reinistated 
+any number of times. The admin interface allows the moderator to select an agent from this
+list and issue a statement using a 'revoke_moderator' verb and with the selected agent as the object. 
+
+To determine whether to use or ignore a moderator statement, reporting tools will compare:
+* the *object* of 'make_moderator' and 'revoke_moderator' statements with the *authority* of the statement 
+issued by the moderator
+* the *timestamp* of the 'make_moderator' and 'revoke_moderator' statements with the *stored* property 
+of the statement issued by the moderator
+
+Only when both match will the reporting tools consider the statement issued by the moderator to be authoritative. 
+
 ###LRS
 ###Reporting Tool(s)
 
