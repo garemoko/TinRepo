@@ -369,16 +369,8 @@ The admin interface also provides a list of agents who have been the object of a
 'make_moderator' verb more recently than they have been the object of a 'revoke_moderator'
 verb. This is those agents who have been given moderator privilages but have not had them revoked,
 and also allows for agents who have had moderator privilages revoked and reinistated 
-any number of times. The admin interface allows the moderator to select an agent from this
+any number of times. The admin interface allows the administrator to select an agent from this
 list and issue a statement using a 'revoke_moderator' verb and with the selected agent as the object. 
-
-To determine whether to use or ignore a moderator statement, reporting tools will compare:
-* the *object* of 'make_moderator' and 'revoke_moderator' statements with the *authority* of the statement 
-issued by the moderator
-* the *timestamp* of the 'make_moderator' and 'revoke_moderator' statements with the *stored* property 
-of the statement issued by the moderator
-
-Only when both match will the reporting tools consider the statement issued by the moderator to be authoritative. 
 
 ###LRS
 The LRS is a standard Tin Can API LRS. It provides a means for users to register so that their statements
@@ -392,8 +384,17 @@ of spam.
 The reporting tool provides a list of extensions registered with the repository. These can be 
 filtered by status or activity type and their activity names and descriptions can be searched for key words. 
 
-In order to present an accurate list, taking into account the actions of authorised moderators only, the reporting
-tool will follow the following validation proceedure in order:
+In order to present an accurate list, taking into account the actions of authorised moderators only, reporting 
+tools will compare:
+
+* the *object* of 'make_moderator' and 'revoke_moderator' statements with the *authority* of the statement 
+issued by the moderator
+* the *timestamp* of the 'make_moderator' and 'revoke_moderator' statements with the *stored* property 
+of the statement issued by the moderator
+
+Only when both match will the reporting tools consider the statement issued by the moderator to be authoritative. 
+
+The reporting tool will follow the following validation proceedure in order:
 
 1. Get all statements from the LRS using the verbs defined in the profile and store them in an array.
 2. For each statement, validate that the objectType and, if relevant, activity type match the profile. 
