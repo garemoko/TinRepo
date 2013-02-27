@@ -238,7 +238,7 @@ The result response property may be used to explain the action taken.
   </tr>
 </table>
 
-#####Revert Extension: http://tincanapi.co.uk/tinrepo/verbs/revert_extension
+#####Reverted Extension: http://tincanapi.co.uk/tinrepo/verbs/reverted_extension
 <table>
   <tr>
     <th>Description</th>
@@ -253,7 +253,7 @@ The result response property may be used to explain the action taken.
   </tr>
 </table>
 
-#####Deprecate Extension: http://tincanapi.co.uk/tinrepo/verbs/deprecate_extension
+#####Deprecated Extension: http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension
 <table>
   <tr>
     <th>Description</th>
@@ -436,7 +436,8 @@ statements:
 2. Populate the id, type, name and description properties using activity definition data from the LRS 
 Activity Profile API for the current activity id.
 3. Populate the status property based on the verb id of the earliest stored statement matching the current activity id.
-The table below maps verb ids to status. 
+The table below maps verb ids to status. Note the rules in the profile about what actions are effective in what
+situations. 
 4. For each subsquently stored statement matching the current activity id, check if the statement has any
 effect on the repositoryItem status based on the rules outlined in the profile. If it does, update the status. 
 5. Repeat step 4 until the most recent matching statement. 
@@ -444,45 +445,91 @@ effect on the repositoryItem status based on the rules outlined in the profile. 
 Once this process has been completed, the reporting tool will have a valid and concise array of data to present to
 the user. 
 
-INSERT TABLE HERE
+<table>
+  <tr><th>verb id used</th><th>status to set</th></tr>
+  <tr>
+    <td>http://tincanapi.co.uk/tinrepo/verbs/registered_extension</td>
+    <td>registered</td>
+  </tr>
+  <tr>
+    <td>http://tincanapi.co.uk/tinrepo/verbs/accepted_extension/td>
+    <td>accepted/td>
+  </tr>
+  <tr>
+    <td>http://tincanapi.co.uk/tinrepo/verbs/recognised_extension</td>
+    <td>recognised</td>
+  </tr>
+  <tr>
+    <td>http://tincanapi.co.uk/tinrepo/verbs/reverted_extension</td>
+    <td>registered</td>
+  </tr>
+  <tr>
+    <td>http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension</td>
+    <td>deprecated</td>
+  </tr>
+</table>
 
 #Community Discussion Forum
-The discussion forum provides a space for extensions to be discussed so that their status can be decided. This decision will then be actioned by the moderators using the moderator interface.
+The discussion forum provides a space for extensions to be discussed so that their status can be decided. This 
+decision will then be actioned by the moderators using the moderator interface.
 
 This component can be any existing forum.
 
-The discussion forum and LRS are the only two components that there can only be one instance of, as they are shared by the whole community. There can be multiple implementations and copies of all the other tools, perhaps integrated into LMSs, websites and intranets. They can even be implemented as apps stored entirely on the user's device.
+The discussion forum and LRS are the only two components that there can only be one instance of, as they are 
+shared by the whole community. There can be multiple implementations and copies of all the other tools, perhaps 
+integrated into LMSs, websites and intranets. They can even be implemented as apps stored entirely on the user's 
+device.
 
-In the long run, a Tin Can powered comment and rating system can be added to the repository can be created to replace the discussion forum. Once this is complete, it will be possible to host multiple instances of the forum interface. This will allow the forum to join the rest of the tools with multiple interfaces all sharing the same LRS database back end. 
+In the long run, a Tin Can powered comment and rating system can be added to the repository can be created to 
+replace the discussion forum. Once this is complete, it will be possible to host multiple instances of the forum 
+interface. This will allow the forum to join the rest of the tools with multiple interfaces all sharing the same 
+LRS database back end. 
 
 ##Community
-The repository allows anybody to register extensions quickly and easily. This allows adopters to define and share extensions on the fly but could lead to some duplicate or badly thought through extensions being added to the repository. The repository community will help to avoid this problem by helping users to define good extensions and find existing extensions rather than defining new ones. The community is also central to the process of approving extensions and recognising when they gain wide spread adoption.
+The repository allows anybody to register extensions quickly and easily. This allows adopters to define and share 
+extensions on the fly but could lead to some duplicate or badly thought through extensions being added to the 
+repository. The repository community will help to avoid this problem by helping users to define good extensions 
+and find existing extensions rather than defining new ones. The community is also central to the process of approving 
+extensions and recognising when they gain wide spread adoption.
 
-When a user (the author) registers an extension, they should also create a new thread in the community discussion forum explaining their reasons for registering the new extension. If there are similar extensions already in the repository, the author should explain how their extension is different and why it is required. The community will then discuss the extension and come to a decision whether to to accept, recognise or deprecate the extensions. Extensions remain at registered status only whilst they are being discussed.
+When a user (the author) registers an extension, they should also create a new thread in the community discussion 
+forum explaining their reasons for registering the new extension. If there are similar extensions already in the 
+repository, the author should explain how their extension is different and why it is required. The community will 
+then discuss the extension and come to a decision whether to to accept, recognise or deprecate the extensions. 
+Extensions remain at registered status only whilst they are being discussed.
 
-The community will revisit the status of extensions from time to to time, particularly if somebody thinks the status of an extension needs to be updated.
+The community will revisit the status of extensions from time to to time, particularly if somebody thinks the status 
+of an extension needs to be updated.
 
-Guidelines for selecting the status of an extension
+###Guidelines for selecting the status of an extension
 
 Extensions will be deprecated if:
 * they are clearly spam or vandalism
 * an extension already exists which has the same purpose
-* the extension name and description are not clear, and it is not possible to improve them (e.g. if the author is not contactable).
+* the extension name and description are not clear, and it is not possible to improve them (e.g. if the author is 
+not contactable).
 
-In the event of a badly written name or description where the intended meaning can be determined, the community will help with improving the definition. The definition can be updated using the activity profile API.
+In the event of a badly written name or description where the intended meaning can be determined, the community will 
+help with improving the definition. The definition can be updated using the activity profile API.
 
 Extensions will be accepted if:
 * the author has a requirement for the extension
 * there is no existing extension that meets the author's needs
 * there is no existing way of using the standard statement properties that meets the author's needs. 
+
 Extensions will be recognised if:
 * the extension is in wide use
 * there is no competing extension with greater adoption.
 
-In cases where two extensions serving the same purpose both have significant adoption, the community will choose one to deprecate and one to keep. Both extensions should have a note added to their descriptions that they are duplicates of the other so that reporting tools can handle them appropriately.
+In cases where two extensions serving the same purpose both have significant adoption, the community will choose 
+one to deprecate and one to keep. Both extensions should have a note added to their descriptions that they are 
+duplicates of the other so that reporting tools can handle them appropriately.
 
-Moderators
-The role of the moderators is to support the community and record the final consensus of the community within the repository. Moderators don't have any greater say in the status of an extension than any other member of the community. The role of moderators is to:
+###Moderators
+The role of the moderators is to support the community and record the final consensus of the community within the 
+repository. Moderators don't have any greater say in the status of an extension than any other member of the community. 
+
+The role of moderators is to:
 
 * encourage and lead discussion of extensions on the community discussion forum
 * determine and summarise concensus
@@ -490,61 +537,86 @@ The role of the moderators is to support the community and record the final cons
 * update the status of extensions in the repository
 * moderate the community discussion forum.
 
-Moderators are chosen from and by the community. They should represent the same diverse range of people represented by the community.
+Moderators are chosen from and by the community. They should represent the same diverse range of people 
+represented by the community.
 
-Administrator
-There is one administrator whose sole role is to appoint and revoke moderator privileges. The administrator does not choose moderators, but serves the consensus of the community.
+###Administrator
+There is one administrator whose sole role is to appoint and revoke moderator privileges. The administrator does 
+not choose moderators, but serves the consensus of the community.
 
-The administrator may or may not also be a moderator. Administrator privileges do not automatically confer moderator privileges.
+The administrator may or may not also be a moderator. Administrator privileges do not automatically confer moderator 
+privileges.
 
 ##Roadmap
-Because TinRepo uses Tin Can, it is actually possible to implement this repository right now using existing freely available tools and resources. This isn't very user friendly though and development of specific tools to support this repository will make things easier. This section outlines how the repository can operate at different stages of development. Note that because each tool is independent, they do not need to be developed in parallel. A phase 1 admin tool can be used with a phase 57 reporting tool (this document doesn't go quite as far as phase 57, but you get the idea).
+Because TinRepo uses Tin Can, it is actually possible to implement this repository right now using existing freely 
+available tools and resources. This isn't very user friendly though and development of specific tools to support this 
+repository will make things easier. This section outlines how the repository can operate at different stages of 
+development. Note that because each tool is independent, they do not need to be developed in parallel. A phase 1 
+admin tool can be used with a phase 57 reporting tool (this document doesn't go quite as far as phase 57, but you 
+get the idea).
 
-Phase 0
+###Phase 0
 Phase 0 means using only existing tools for the various components of the repository.
 
-User interface: the TinStatement tool found at tincanapi.co.uk or the statement generator at tincanapi.com
+**User interface:** the TinStatement tool found at tincanapi.co.uk or the statement generator at tincanapi.com
 
-Moderator interface: moderators can use the statement viewer at tincanapi.com to view extensions which have been submitted, and then one of the statement generator to tools to change their status.
+**Moderator interface:** moderators can use the statement viewer at tincanapi.com to view extensions which have been 
+submitted, and then one of the statement generator to tools to change their status.
 
-Administrator interface: the administrator can use TinStatement at tincanapi.co.uk to grant and revoke moderator status (the statement generator at tincanapi.com does not support agent objects). He can use the statement viewer to check who has been granted or revoked moderator privileges previously.
+**Administrator interface:** the administrator can use TinStatement at tincanapi.co.uk to grant and revoke moderator 
+status (the statement generator at tincanapi.com does not support agent objects). He can use the statement viewer 
+to check who has been granted or revoked moderator privileges previously.
 
-LRS: the LRS can simply be the public LRS at tincanapi.com
+**LRS:** the LRS can simply be the public LRS at tincanapi.com
 
-Reporting tools: the statement viewer can be used as a reporting tool. This is very basic, but will allow users who know what they are doing to get most of the required information out.
+**Reporting tools:** the statement viewer can be used as a reporting tool. This is very basic, but will allow users 
+who know what they are doing to get most of the required information out.
 
-Community forum: the issues section of this Github repository.
+**Community forum:** the issues section of this Github repository.
 
-Phase 1
-Phase one is customised versions of existing tools to focus on the functions required for the component.
+###Phase 1
+Phase 1 is customised versions of existing tools to focus on the functions required for the component.
 
-User interface: a restricted version of TinStatement that sets and hides the LRS endpoint, verb and object type and restricts the activity definition type to those defined in the profile.
+**User interface:** a restricted version of TinStatement that sets and hides the LRS endpoint, verb and object type and 
+restricts the activity definition type to those defined in the profile.
 
-Moderator interface: another restricted version of TinStatement the same as the user interface except that moderators can choose from a range of moderator verbs defined in the profile. Moderators can use the reporting tools to check what extensions exist.
+**Moderator interface:** another restricted version of TinStatement the same as the user interface except that moderators 
+can choose from a range of moderator verbs defined in the profile. Moderators can use the reporting tools to check 
+what extensions exist.
 
-Administrator interface: a third restricted version of TinStatement where the verbs to choose from are the administrator verbs defined in the profile and the statement object is an agent.
+**Administrator interface:** a third restricted version of TinStatement where the verbs to choose from are the 
+administrator verbs defined in the profile and the statement object is an agent.
 
-LRS: an instance of a standard Tin Can LRS specifically set up as the repository end point.
+**LRS:** an instance of a standard Tin Can LRS specifically set up as the repository end point.
 
-Reporting tools: a basic version of the reporting tool with no search facility and limited filtering.
+**Reporting tools:** a basic version of the reporting tool with no search facility and limited filtering.
 
-Community forum: a forum specifically created for the repository.
+**Community forum:** a forum specifically created for the repository.
 
-Phase 2
+###Phase 2
 Phase 2 is a full version of each component as described in this document.
 
-User interface: the phase 1 tool will have its UI reviewed and have help text added.
+**User interface:** the phase 1 tool will have its UI reviewed and have help text added.
 
-Moderator interface: a modified version of the reporting tool will be integrated with the phase 1 moderator interface so that moderators can find extensions and then click a button to open the moderator interface in a new window with the details of the selected extension filled in as the object of the statement. This modified reporting tool can share the same code base as the main reporting tool, but the button to perform moderator actions will be hidden for non moderators.
+**Moderator interface:** a modified version of the reporting tool will be integrated with the phase 1 moderator interface 
+so that moderators can find extensions and then click a button to open the moderator interface in a new window with 
+the details of the selected extension filled in as the object of the statement. This modified reporting tool can share 
+the same code base as the main reporting tool, but the button to perform moderator actions will be hidden for non 
+moderators.
 
-Administrator interface: a new tool based on the phase 1 moderator tool backend but with a reporting tool front end. This reporting tool front end will allow the administrator to find non moderators who have registered extensions and promote them to moderators or find moderators and revoke their moderator privileges. This tool will require the administrator to enter LRS credentials and actor details before use.
+**Administrator interface:** a new tool based on the phase 1 moderator tool backend but with a reporting tool front end. 
+This reporting tool front end will allow the administrator to find non moderators who have registered extensions and 
+promote them to moderators or find moderators and revoke their moderator privileges. This tool will require the 
+administrator to enter LRS credentials and actor details before use.
 
-LRS: a custom LRS which only accepts valid statements as defined in the profile and reporting tool component description above.
+**LRS:** a custom LRS which only accepts valid statements as defined in the profile and reporting tool component 
+description above.
 
-Reporting tool: as phase one but with fully featured filtering and searching.
+**Reporting tool:** as phase one but with fully featured filtering and searching.
 
-Community forum: as phase 1.
+**Community forum:** as phase 1.
 
+###Phase X
 Additional features and phases will be added as new requirements become apparent with use of the system.
 
 
