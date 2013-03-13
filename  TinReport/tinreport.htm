@@ -1,0 +1,92 @@
+<!--
+=============COPYRIGHT============
+Tin Book - An I-Read-This prototype for Tin Can API
+Copyright (C) 2012  Andrew Downes
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+<http://www.gnu.org/licenses/>.
+
+=============CREDITS============
+Thanks to Rustici Software for provision of TCDriver.js which powers
+the calls to the Tin Can API and for developing the Tin Can API
+TCDriver.js is reproduced here by permission under the understanding that
+it is still a prototype. It comes from the prototype package found at:
+http://scorm.com/project-tin-can-phase-3-prototyping-tin-can-content-outside-of-the-lms/
+
+=============DEVELOPMENT STATUS============
+This software is currently in development and is NOT intended to be used
+in a live situation.
+
+-->
+<!doctype html>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<html>
+	<head>
+		
+		<meta name="viewport" content="width=600, initial-scale=1">
+		<title>I Did This</title>
+		<link rel="stylesheet" href="tinstatement.css" type="text/css" />
+		<!-- jquery  
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>-->
+		<script src="js-lib/jquery-1.7.1.min.js"></script>
+
+		<!-- Rustici's Tin Can functions - call these to access the Tin Can API-->
+		<script src="tincanjs/TinCan.js"></script>
+		<script src="tincanjs/Utils.js"></script>
+		<script src="tincanjs/Activity.js"></script>
+		<script src="tincanjs/ActivityDefinition.js"></script>
+		<script src="tincanjs/ActivityDefinition.js"></script>
+		<script src="tincanjs/Agent.js"></script>
+		<script src="tincanjs/AgentAccount.js"></script>
+		<script src="tincanjs/Context.js"></script>
+		<script src="tincanjs/Group.js"></script>
+		<script src="tincanjs/InteractionComponent.js"></script>
+		<script src="tincanjs/LRS.js"></script>
+		<script src="tincanjs/Result.js"></script>
+		<script src="tincanjs/Score.js"></script>
+		<script src="tincanjs/State.js"></script>
+		<script src="tincanjs/Statement.js"></script>
+		<script src="tincanjs/StatementRef.js"></script>
+		<script src="tincanjs/StatementsResult.js"></script>
+		<script src="tincanjs/SubStatement.js"></script>
+		<script src="tincanjs/Verb.js"></script>
+
+		<!-- Base64 
+		<script src="http://tin-can-can.googlecode.com/files/base64.js"></script>-->
+		<script src="js-lib/base64.js"></script>
+
+		<!-- generic functions used for capturing all or part of a statement with a web form (relies on certain HTML) -->
+		<script src="TinFormFunctions.js"></script>
+		<!-- main js file for this wrapper -->
+		<script src="TinStatement.js"></script>
+
+	</head>
+	<body >
+
+		<h1>Tin Repo</h1>
+		<p>
+			Insert some text here
+		</p>
+
+		<!-- <input type="button" value="Build URL" name="btnSave" id="templateURL" class="button"/>
+		Navigate to a bookmarkable URL that autofills the above by querystring - only visible when Bookmark is not -->
+		<!-- <input type="button" value="Bookmark" name="btnBookmark" id="templateURL" class="button"/>
+		Bookmarks the saved page - only visible if page contains autofuilled fields. Hide when any field is changed.  -->
+
+		<div class="section" id="report">
+			
+
+		</div>
+
+		<noscript>
+			This course requires JavaScript to be enabled in your browser. Please enable JavaScript, then relaunch the course.
+		</noscript>
+	</body>
+</html>
