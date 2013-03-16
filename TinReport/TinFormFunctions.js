@@ -19,6 +19,16 @@ GNU General Public License for more details.
 
 //=====================UTILITY FUNCTIONS==============
 
+function getLangFromMapInGBOrDefault (languageMap){
+	var defaultLang;
+	for (var lang in languageMap) {
+	    defaultLang = lang;
+	    break;
+	}
+	object = (languageMap['en-GB']) ? languageMap['en-GB'] : languageMap[lang];
+}
+
+
 //removes any empty properties 
 function deleteEmptyProperties(objectToTest)
 {
