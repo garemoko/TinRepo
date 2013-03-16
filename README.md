@@ -262,7 +262,7 @@ The result response property may be used to explain the action taken.
   <tr>
     <td>The actor set an extension to deprecated status. When used on an extension which 
     has not been registered, this action also registers the extension. When used 
-    on an extension which already has registered status, this action has no effect.</td>
+    on an extension which already has deprecated status, this action has no effect.</td>
     <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
