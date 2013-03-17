@@ -86,8 +86,9 @@ $(function(){
 });
 function getDataComplete(){
 	validateStatements ();
-	var respositoryItems = buildRespositoryObject();
-	outputRespositoryItems(respositoryItems);
+	var repositoryItems = buildRespositoryObject();
+
+	outputrepositoryItems(repositoryItems);
 	
 	console.log (new Date().getTime() + ' All done. Enjoy!');
 }
@@ -372,12 +373,12 @@ function validateActivityTypes(statements,activityTypes)
 
 function buildRespositoryObject (){
 	console.log (new Date().getTime() + ' Processing data...');
-	var respositoryItems = {};
+	var repositoryItems = {};
 	
 	//Add all registered items to the array
 	var registerExtensionStatementsLength = registerExtensionStatements.length;
 	for (var i = 0; i < registerExtensionStatementsLength; i++) {
-		respositoryItems = modifyRepository(respositoryItems, registerExtensionStatements[i], "registered", ["registered","reverted","deprecated","recognised","accepted"])
+		repositoryItems = modifyRepository(repositoryItems, registerExtensionStatements[i], "registered", ["registered","reverted","deprecated","recognised","accepted"])
 	}
 	
 	//Get the most recent revert to registered status. 
@@ -386,41 +387,41 @@ function buildRespositoryObject (){
 	//From here onwards, we know there are no revert statements after the modified timestamp of each extension.
 	var revertExtensionStatementsLength = revertExtensionStatements.length;
 	for (var i = 0; i < revertExtensionStatementsLength; i++) {
-		respositoryItems = modifyRepository(respositoryItems, revertExtensionStatements[i], "reverted", [])
+		repositoryItems = modifyRepository(repositoryItems, revertExtensionStatements[i], "reverted", [])
 	}
 
 	//Deprecate any extensions that have been deprecated after the most recent time they were reverted
 	//If a statement has been deprecated after this point, it cannot have been accepted or recognised since. 
 	var deprecateExtensionStatementsLength = deprecateExtensionStatements.length;
 	for (var i = 0; i < deprecateExtensionStatementsLength; i++) {
-		respositoryItems = modifyRepository(respositoryItems, deprecateExtensionStatements[i], "deprecated", ["deprecated"])
+		repositoryItems = modifyRepository(repositoryItems, deprecateExtensionStatements[i], "deprecated", ["deprecated"])
 	}
 	
 	//Recognise any extensions that have been recognised after the most recent time they were reverted
 	//If a statement has been recognised after this point, it cannot have been accepted since. 
 	var recogniseExtensionStatementsLength = recogniseExtensionStatements.length;
 	for (var i = 0; i < recogniseExtensionStatementsLength; i++) {
-		respositoryItems = modifyRepository(respositoryItems, recogniseExtensionStatements[i], "recognised", ["deprecated","recognised"])
+		repositoryItems = modifyRepository(repositoryItems, recogniseExtensionStatements[i], "recognised", ["deprecated","recognised"])
 	}
 	
 	//Accept any extensions that have been accepeted after the most recent time they were reverted
 	var acceptExtensionStatementsLength = acceptExtensionStatements.length;
 	for (var i = 0; i < acceptExtensionStatementsLength; i++) {
-		respositoryItems = modifyRepository(respositoryItems, acceptExtensionStatements[i], "accepted", ["deprecated","recognised","accepted"])
+		repositoryItems = modifyRepository(repositoryItems, acceptExtensionStatements[i], "accepted", ["deprecated","recognised","accepted"])
 	}
 
 	console.log (new Date().getTime() + ' Processing complete.');
-	return respositoryItems;
+	return repositoryItems;
 }
 
-function modifyRepository(respositoryItems, statement, status, dontOverwrite)
+function modifyRepository(repositoryItems, statement, status, dontOverwrite)
 {
 	var extensionId = statement.target.id;
 	//if the extension already exists in the repository object..
-	if (respositoryItems.hasOwnProperty(extensionId))
+	if (repositoryItems.hasOwnProperty(extensionId))
 	{
 		//if timstamp is older than the current statement and the status is ok to overwrite
-		if((Date.parse(respositoryItems[extensionId].modified) < Date.parse(statement.stored))
+		if((Date.parse(repositoryItems[extensionId].modified) < Date.parse(statement.stored))
 		&&(!$.inArray(repositoryItems[extensionId].status, dontOverwrite))){
 			repositoryItems[extensionId].status = status;
 			repositoryItems[extensionId].modified = statement.stored;
@@ -436,6 +437,7 @@ function modifyRepository(respositoryItems, statement, status, dontOverwrite)
 		}
 		
 	}
+	return repositoryItems;
 }
 
 //TODO: add additional parameters to this function and move to TinCan.Utils
@@ -452,32 +454,22 @@ function sortStatementsByTimestamp(statements)
 //==============OUTPUT TO DOM FUNCTIONS=====================
 
 
-function outputRespositoryItems(respositoryItems){
+function outputrepositoryItems(repositoryItems){
+		console.log(JSON.stringify(repositoryItems));
 	//For each repo item...
-	var respositoryItemsLength = respositoryItems.length;
-	for (var i = 0; i < respositoryItemsLength; i++) {
-		var respositoryItem = respositoryItems[i];
+	$.each(repositoryItems, function(i, repositoryItem){
 		
-		var itemDiv = $('<div id="' + encodeURIComponent(respositoryItem.id) + '" class="section ' + respositoryItem.type + ' ' + respositoryItem.status + '"></div>');
-		itemDiv.append('<h2><a target="blank" href="' + respositoryItem.id + '">' + respositoryItem.definition.name + '</a></h2>');
+		var itemDiv = $('<div id="' + encodeURIComponent(repositoryItem.id) + '" class="section ' + repositoryItem.type + ' ' + repositoryItem.status + '"></div>');
+		itemDiv.append('<h2><a target="blank" href="' + repositoryItem.id + '">' + repositoryItem.definition.name + '</a></h2>');
 		var propertiesTable = $('<table></table>');
-		propertiesTable.append(propertiesTableRow('Extension type', respositoryItem.type));
-		propertiesTable.append(propertiesTableRow('Extension status', respositoryItem.status));
+		propertiesTable.append(propertiesTableRow('Extension type', repositoryItem.type));
+		propertiesTable.append(propertiesTableRow('Extension status', repositoryItem.status));
 		itemDiv.append(propertiesTable);
-		itemDiv.append('<p>' + respositoryItem.definition.description + '</p>');
+		itemDiv.append('<p>' + repositoryItem.definition.description + '</p>');
 		
-		myTinCan.getStatements({
-			params:{
-				verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"},
-				sparse:false
-			},
-			callback: getMakeModerator
-		});
-		
-		//$('body').append(itemDiv)
-		
-
-	}
+		console.log(itemDiv.html);
+		$('body').append(itemDiv);
+	});
 	
 }
 
