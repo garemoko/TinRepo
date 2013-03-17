@@ -15,6 +15,11 @@ GNU General Public License for more details.
 <http://www.gnu.org/licenses/>.
 */
 
+//TODO: handle 'more' in returned statements
+//TODO: handle voided statements (note: hopefully the LRS will do this in 1.0, so holding off for now).
+//TODO: get defintiions from the LRS (pending TinCanJs functionality).
+//TODO: filters and searches.
+
 
 //Create an instance of the Tin Can Library
 
@@ -42,6 +47,7 @@ deprecateExtensionStatements,
 recogniseExtensionStatements,
 acceptExtensionStatements,
 registerExtensionStatements;
+
 
 //track the number of LRS requests completed:
 var LRSGetsCompleted = 0,
@@ -74,22 +80,14 @@ var adminAuth = [{
 $(function(){
 	console.log (new Date().getTime() + ' HTML page loaded. LRS data retrieval will begin in a few milliseconds...');
 	
-	//Get all the data from the LRS. Calls processStatements when all requests are complete. 
+	//Get all the data from the LRS. Calls getDataComplete when all requests are complete. 
 	getDataFromLRS();
 	
 });
-
-
-function processStatements (){
+function getDataComplete(){
 	validateStatements ();
-	
-	console.log (new Date().getTime() + ' Processing data...');
-	
-	//dump the results on the page....(for now)
-	outputStatements(makeModeratorStatements);
-	$('body').append(JSON.stringify(makeModeratorStatements));
-	outputStatements(revokeModeratorStatements);
-	$('body').append(JSON.stringify(revokeModeratorStatements));
+	var respositoryItems = buildRespositoryObject();
+	outputRespositoryItems(respositoryItems);
 	
 	console.log (new Date().getTime() + ' All done. Enjoy!');
 }
@@ -104,6 +102,7 @@ function getDataFromLRS()
 	myTinCan.getStatements({
 		params:{
 			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"},
+			sparse:false
 		},
 		callback: getMakeModerator
 	});
@@ -202,12 +201,11 @@ function handleDataReturned ()
 	console.log (new Date().getTime() + ' ' + LRSGetsCompleted + ' ' + ' out of ' + LRSGetsDue + ' requests completed...');
 	
 	if (LRSGetsCompleted == LRSGetsDue){
-		processStatements ();
+		getDataComplete();
 	}
 }
 
 //============VALIDATION FUNCTIONS==========================
-//TODO: remove any voided statements (note: check if TinCanJS already does it, if not, consider integrating it).
 
 //remove any statements that do not meet validation criteria defined in the profile or are not from authorised authorities
 function validateStatements ()
@@ -226,6 +224,7 @@ function validateStatements ()
 	deprecateExtensionStatements = validateModeratorStatements(deprecateExtensionStatements);
 	recogniseExtensionStatements = validateModeratorStatements(recogniseExtensionStatements);
 	acceptExtensionStatements = validateModeratorStatements(acceptExtensionStatements);
+	//save the length as this will be used lots and will not change from here onwards
 	
 	//Validate public statements
 	registerExtensionStatements = validatePublicStatements(registerExtensionStatements);
@@ -369,6 +368,76 @@ function validateActivityTypes(statements,activityTypes)
 	return returnStatements;
 }
 
+//==============DATA PROCESSING FUNCTIONS=====================
+
+function buildRespositoryObject (){
+	console.log (new Date().getTime() + ' Processing data...');
+	var respositoryItems = {};
+	
+	//Add all registered items to the array
+	var registerExtensionStatementsLength = registerExtensionStatements.length;
+	for (var i = 0; i < registerExtensionStatementsLength; i++) {
+		respositoryItems = modifyRepository(respositoryItems, registerExtensionStatements[i], "registered", ["registered","reverted","deprecated","recognised","accepted"])
+	}
+	
+	//Get the most recent revert to registered status. 
+	//The status "reverted" is used for now, but this will be replaced with "registered" at the end of processing. 
+	//This prevents registered statements overwritting accept and recognise statements.
+	//From here onwards, we know there are no revert statements after the modified timestamp of each extension.
+	var revertExtensionStatementsLength = revertExtensionStatements.length;
+	for (var i = 0; i < revertExtensionStatementsLength; i++) {
+		respositoryItems = modifyRepository(respositoryItems, revertExtensionStatements[i], "reverted", [])
+	}
+
+	//Deprecate any extensions that have been deprecated after the most recent time they were reverted
+	//If a statement has been deprecated after this point, it cannot have been accepted or recognised since. 
+	var deprecateExtensionStatementsLength = deprecateExtensionStatements.length;
+	for (var i = 0; i < deprecateExtensionStatementsLength; i++) {
+		respositoryItems = modifyRepository(respositoryItems, deprecateExtensionStatements[i], "deprecated", ["deprecated"])
+	}
+	
+	//Recognise any extensions that have been recognised after the most recent time they were reverted
+	//If a statement has been recognised after this point, it cannot have been accepted since. 
+	var recogniseExtensionStatementsLength = recogniseExtensionStatements.length;
+	for (var i = 0; i < recogniseExtensionStatementsLength; i++) {
+		respositoryItems = modifyRepository(respositoryItems, recogniseExtensionStatements[i], "recognised", ["deprecated","recognised"])
+	}
+	
+	//Accept any extensions that have been accepeted after the most recent time they were reverted
+	var acceptExtensionStatementsLength = acceptExtensionStatements.length;
+	for (var i = 0; i < acceptExtensionStatementsLength; i++) {
+		respositoryItems = modifyRepository(respositoryItems, acceptExtensionStatements[i], "accepted", ["deprecated","recognised","accepted"])
+	}
+
+	console.log (new Date().getTime() + ' Processing complete.');
+	return respositoryItems;
+}
+
+function modifyRepository(respositoryItems, statement, status, dontOverwrite)
+{
+	var extensionId = statement.target.id;
+	//if the extension already exists in the repository object..
+	if (respositoryItems.hasOwnProperty(extensionId))
+	{
+		//if timstamp is older than the current statement and the status is ok to overwrite
+		if((Date.parse(respositoryItems[extensionId].modified) < Date.parse(statement.stored))
+		&&(!$.inArray(repositoryItems[extensionId].status, dontOverwrite))){
+			repositoryItems[extensionId].status = status;
+			repositoryItems[extensionId].modified = statement.stored;
+		}
+	}
+	else{
+		//create the extension in the repository object
+		repositoryItems[extensionId] = {
+			id:extensionId,
+			status : status,
+			definition : statement.target.definition,
+			modified: statement.stored
+		}
+		
+	}
+}
+
 //TODO: add additional parameters to this function and move to TinCan.Utils
 //sorts by newest timestamp first - reverse chronological order
 function sortStatementsByTimestamp(statements)
@@ -380,42 +449,39 @@ function sortStatementsByTimestamp(statements)
 	});
 }
 
-//===================================
+//==============OUTPUT TO DOM FUNCTIONS=====================
 
 
-function outputStatements(statements){
-	//For each statement returned...
-	var statementsLength = statements.length;
-	for (var i = 0; i < statementsLength; i++) {
-		var statement = statements[i];
+function outputRespositoryItems(respositoryItems){
+	//For each repo item...
+	var respositoryItemsLength = respositoryItems.length;
+	for (var i = 0; i < respositoryItemsLength; i++) {
+		var respositoryItem = respositoryItems[i];
 		
-		var actor = '<a target="blank" href="' + statement.actor.mbox + '">' + statement.actor.name + '</a>';
-		var verb = (statement.verb.display['en-GB']) ? statement.verb.display['en-GB'] : statement.verb.display['en-US'];
-var objectLink;
+		var itemDiv = $('<div id="' + encodeURIComponent(respositoryItem.id) + '" class="section ' + respositoryItem.type + ' ' + respositoryItem.status + '"></div>');
+		itemDiv.append('<h2><a target="blank" href="' + respositoryItem.id + '">' + respositoryItem.definition.name + '</a></h2>');
+		var propertiesTable = $('<table></table>');
+		propertiesTable.append(propertiesTableRow('Extension type', respositoryItem.type));
+		propertiesTable.append(propertiesTableRow('Extension status', respositoryItem.status));
+		itemDiv.append(propertiesTable);
+		itemDiv.append('<p>' + respositoryItem.definition.description + '</p>');
+		
+		myTinCan.getStatements({
+			params:{
+				verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"},
+				sparse:false
+			},
+			callback: getMakeModerator
+		});
+		
+		//$('body').append(itemDiv)
+		
 
-		if (statement.target.objectType == "Agent")
-		{
-			objectLink = '<a target="blank" href="' + statement.target.mbox + '">' + statement.target.name + '</a>'
-		}
-		else
-		{
-			var object
-			if (statement.target.definition){
-				object = getLangFromMapInGBOrDefault(statement.target.definition.name)
-			}
-			else
-			{
-				object = statement.target.id;
-			}
-			
-			objectLink = '<a target="blank" href="' + statement.target.id + '">' + object + '</a>'
-		}
-		var statementDiv = $('<div class="section"></div>');
-		statementDiv.html(actor + ' ' + verb + ' ' + objectLink +'<br />'+ statement.authority);
-
-		$('body').append(statementDiv);
 	}
 	
 }
 
+function propertiesTableRow (label,value){
+	return '<tr><td class="label">' + label + ':</td><td>' + value + '</td></tr>';
+}
 

@@ -214,8 +214,8 @@ The result response property may be used to explain the action taken.
   <tr>
     <td>The actor promoted an extension to accepted status.
     When used on an extension which has not been registered, this action also
-    registers the extension. When used on an extension which already has 
-    accepted or recognised status, this action has no effect. This verb 
+    registers the extension. When used on an extension which has 
+    accepted, recognised or deprecated status, this action has no effect. This verb 
     cannot be used to revert recognised extensions to accepted status.</td>
     <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
@@ -231,8 +231,8 @@ The result response property may be used to explain the action taken.
   <tr>
     <td>The actor promoted an extension to recognised status.
     When used on an extension which has not been registered, this action also
-    registers the extension. When used on an extension which already has 
-    recognised status, this action has no effect.</td>
+    registers the extension. When used on an extension which has 
+    recognised or deprecated status, this action has no effect.</td>
     <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
@@ -246,8 +246,12 @@ The result response property may be used to explain the action taken.
   </tr>
   <tr>
     <td>The actor reverted an extension to registered status. When used on an extension 
-    which has not been registered, this action also register the extension. When used 
-    on an extension which already has registered status, this action has no effect.</td>
+    which has not been registered, this action also registers the extension. When used 
+    on an extension which already has registered status, this action has no effect.
+    
+    Deprecated extensions must be reverted before they can be accepted or recognised,
+    even if they have previously been accepted and/or recognised.
+    </td>
     <td>Moderators only</td>
     <td>An activity with any of the activity types defined in this profile.</td>
   </tr>
@@ -422,26 +426,20 @@ extension and include only the relevant data from the statement that needs to be
 will be declared to contain a colelction of repositoryItem objects with the following properties:
 
 * id
-* type
-* name
-* description
 * status
+* modified
+* definition
+* * type
+* * name
+* * description
 
 id and type are URIs, name and description are language maps as defined in the Tin Can API specification and
 status is a string. 
 
-The following process will be carried out for each unique activity in the array of valid extension management 
+The following process will be carried out for the array of valid extension management 
 statements:
 
-1. Create a new repositoryItem object in the array.
-2. Populate the id, type, name and description properties using activity definition data from the LRS 
-Activity Profile API for the current activity id.
-3. Populate the status property based on the verb id of the earliest stored statement matching the current activity id.
-The table below maps verb ids to status. Note the rules in the profile about what actions are effective in what
-situations. 
-4. For each subsquently stored statement matching the current activity id, check if the statement has any
-effect on the repositoryItem status based on the rules outlined in the profile. If it does, update the status. 
-5. Repeat step 4 until the most recent matching statement. 
+TO BE RE-WRITTEN. See TinReport.js, buildRespositoryObject function.
 
 Once this process has been completed, the reporting tool will have a valid and concise array of data to present to
 the user. 
@@ -453,8 +451,8 @@ the user.
     <td>registered</td>
   </tr>
   <tr>
-    <td>http://tincanapi.co.uk/tinrepo/verbs/accepted_extension/td>
-    <td>accepted/td>
+    <td>http://tincanapi.co.uk/tinrepo/verbs/accepted_extension</td>
+    <td>accepted</td>
   </tr>
   <tr>
     <td>http://tincanapi.co.uk/tinrepo/verbs/recognised_extension</td>
