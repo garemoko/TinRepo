@@ -15,9 +15,21 @@ GNU General Public License for more details.
 <http://www.gnu.org/licenses/>.
 */
 
+
 //Create an instance of the Tin Can Library
 
 var myTinCan = new TinCan();
+
+//============SETTINGS=================================
+//Create an LRS and add to the list of record stores
+var myLRS = new TinCan.LRS({
+	endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/", 
+	version: "0.95",
+	auth: 'Basic ' + Base64.encode("gddikCN6KrbdWZaXq36T" + ':' + "b7Q21MPlattwRn964bVW")
+});
+
+myTinCan.recordStores[0] = myLRS;
+
 myTinCan.DEBUG = 0;
 
 //define the arrays of statements as global variables
@@ -30,6 +42,11 @@ deprecateExtensionStatements,
 recogniseExtensionStatements,
 acceptExtensionStatements,
 registerExtensionStatements;
+
+//track the number of LRS requests completed:
+var LRSGetsCompleted = 0,
+LRSGetsDue=7;
+
 
 //Define legal activity types (see profile)
 var legalActivityTypes = [
@@ -53,124 +70,20 @@ var adminAuth = [{
 		}
 	}]
 
-/*============DOCUMENT READY==============*/
+//============DOCUMENT READY=============================
 $(function(){
 	console.log (new Date().getTime() + ' HTML page loaded. LRS data retrieval will begin in a few milliseconds...');
 	
-	//Create an LRS and add to the list of record stores
-	var myLRS = new TinCan.LRS({
-		endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/", 
-		version: "0.95",
-		auth: 'Basic ' + Base64.encode("gddikCN6KrbdWZaXq36T" + ':' + "b7Q21MPlattwRn964bVW")
-	});
-	
-	myTinCan.recordStores[0] = myLRS;
-	
-	getMakeModerator();
+	//Get all the data from the LRS. Calls processStatements when all requests are complete. 
+	getDataFromLRS();
 	
 });
 
-function getMakeModerator()
-{	
-	console.log (new Date().getTime() + ' Getting and validating data from the LRS (this may take a few seconds, please wait)...');
+
+function processStatements (){
+	validateStatements ();
 	
-	//get the make moderator statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"},
-		},
-		callback: getRevokeModerator
-	});
-}
-
-function getRevokeModerator (err,result){
-	//validate and save the result of the previous step to a global variable
-	makeModeratorStatements = validateAdministratorStatements(result.statements);
-	//save the length as this will be used lots and will not change from here onwards
-	makeModeratorStatementsLength = makeModeratorStatements.length;
-	
-	//Get the revoke statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/revoke_moderator"},
-		},
-		callback: getRevertExtension
-	});
-}
-
-function getRevertExtension (err,result){
-	//validate and save the result of the previous step to a global variable
-	revokeModeratorStatements = validateAdministratorStatements(result.statements);
-	//save the length as this will be used lots and will not change from here onwards
-	revokeModeratorStatementsLength = revokeModeratorStatements.length;
-	
-	//Get the statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/reverted_extension"},
-		},
-		callback: getDeprecateExtension
-	});
-}
-
-function getDeprecateExtension (err,result){
-	//validate and save the result of the previous step to a global variable
-	revertExtensionStatements = validateModeratorStatements(result.statements);
-	
-	//Get the statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension"},
-		},
-		callback: getRecogniseExtension
-	});
-}
-
-function getRecogniseExtension (err,result){
-	//validate and save the result of the previous step to a global variable
-	deprecateExtensionStatements = validateModeratorStatements(result.statements);
-	
-	//Get the statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/recognised_extension"},
-		},
-		callback: getAcceptExtension
-	});
-}
-
-function getAcceptExtension (err,result){
-	//validate and save the result of the previous step to a global variable
-	recogniseExtensionStatements = validateModeratorStatements(result.statements);
-	
-	//Get the statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/accepted_extension"},
-		},
-		callback: getRegisterExtension
-	});
-}
-
-function getRegisterExtension (err,result){
-	//validate and save the result of the previous step to a global variable
-	acceptExtensionStatements = validateModeratorStatements(result.statements);
-	
-	//Get the statements
-	myTinCan.getStatements({
-		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/registered_extension"},
-		},
-		callback: processStatements
-	});
-}
-
-
-function processStatements (err,result){
-	//handle the result of the previous step
-	registerExtensionStatements = validatePublicStatements(result.statements);
-	console.log (new Date().getTime() + ' Data retrieved and validated. Processing data...');
-	//TODO: get and validate moderator statements - store them in sub-arrays divided by object activity id, sorted by stored property
+	console.log (new Date().getTime() + ' Processing data...');
 	
 	//dump the results on the page....(for now)
 	outputStatements(makeModeratorStatements);
@@ -181,8 +94,143 @@ function processStatements (err,result){
 	console.log (new Date().getTime() + ' All done. Enjoy!');
 }
 
+//============XHR FUNCTIONS=================================
+//Sets all the XHR requests running. We don't know the order they will complete. 
+function getDataFromLRS()
+{
+	console.log (new Date().getTime() + ' Getting data from the LRS (this may take a few seconds, please wait)...');
+	
+	//get the make moderator statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"},
+		},
+		callback: getMakeModerator
+	});
+	
+	//Get the revoke statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/revoke_moderator"},
+		},
+		callback: getRevokeModerator
+	});
+	
+	//Get the revert statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/reverted_extension"},
+		},
+		callback: getRevertExtension
+	});
+	
+	//Get the deprecate statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension"},
+		},
+		callback: getDeprecateExtension
+	});
+	
+	//Get the recognise statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/recognised_extension"},
+		},
+		callback: getRecogniseExtension
+	});
+	
+	//Get the accept statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/accepted_extension"},
+		},
+		callback: getAcceptExtension
+	});
+	
+	//Get the statements
+	myTinCan.getStatements({
+		params:{
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/registered_extension"},
+		},
+		callback: getRegisterExtension
+	});
+
+	
+}
+
+function getMakeModerator(err,result){	
+	makeModeratorStatements = result.statements;
+	handleDataReturned();
+}
+
+function getRevokeModerator (err,result){
+	revokeModeratorStatements = result.statements;
+	handleDataReturned();
+	
+}
+
+function getRevertExtension (err,result){
+	revertExtensionStatements = result.statements;
+	handleDataReturned();
+
+}
+
+function getDeprecateExtension (err,result){
+	deprecateExtensionStatements = result.statements;
+	handleDataReturned();
+}
+
+function getRecogniseExtension (err,result){
+	recogniseExtensionStatements = result.statements;
+	handleDataReturned();
+}
+
+function getAcceptExtension (err,result){
+	acceptExtensionStatements = result.statements;
+	handleDataReturned();
+}
+
+function getRegisterExtension (err,result){
+	registerExtensionStatements = result.statements;
+	handleDataReturned();
+}
+
+function handleDataReturned ()
+{
+	LRSGetsCompleted++
+	console.log (new Date().getTime() + ' ' + LRSGetsCompleted + ' ' + ' out of ' + LRSGetsDue + ' requests completed...');
+	
+	if (LRSGetsCompleted == LRSGetsDue){
+		processStatements ();
+	}
+}
+
 //============VALIDATION FUNCTIONS==========================
 //TODO: remove any voided statements (note: check if TinCanJS already does it, if not, consider integrating it).
+
+//remove any statements that do not meet validation criteria defined in the profile or are not from authorised authorities
+function validateStatements ()
+{
+	console.log (new Date().getTime() + ' Validating returned data...');
+	
+	//validate moderator statements
+	makeModeratorStatements = validateAdministratorStatements(makeModeratorStatements);
+	revokeModeratorStatements = validateAdministratorStatements(revokeModeratorStatements);
+	//save the length as this will be used lots and will not change from here onwards
+	makeModeratorStatementsLength = makeModeratorStatements.length;
+	revokeModeratorStatementsLength = revokeModeratorStatements.length;
+
+	//Validate administrator statements
+	revertExtensionStatements = validateModeratorStatements(revertExtensionStatements);
+	deprecateExtensionStatements = validateModeratorStatements(deprecateExtensionStatements);
+	recogniseExtensionStatements = validateModeratorStatements(recogniseExtensionStatements);
+	acceptExtensionStatements = validateModeratorStatements(acceptExtensionStatements);
+	
+	//Validate public statements
+	registerExtensionStatements = validatePublicStatements(registerExtensionStatements);
+	console.log (new Date().getTime() + ' Data validated.');
+}
 
 function validateAdministratorStatements(statements){
 	//timestamp is important for administrator statements, not stored, so change the order
