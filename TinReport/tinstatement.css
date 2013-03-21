@@ -1,7 +1,7 @@
 body {
 	background: #d5d4d1;
 	text-align: left;
-	font-family: Calibri, Georgia, Serif;
+	font-family: Century Gothic;
 	width: 600px;
 	margin: auto;
 	
@@ -36,6 +36,12 @@ div {
 .label {
 	text-align: right;
 	width: 150px;
+}
+.grey{
+	background:#cfc;
+}
+.grey2{
+	background:#cfd;
 }
 .label_heading {
 	font-weight: bold;

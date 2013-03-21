@@ -25,7 +25,7 @@ function getLangFromMapInGBOrDefault (languageMap){
 	    defaultLang = lang;
 	    break;
 	}
-	object = (languageMap['en-GB']) ? languageMap['en-GB'] : languageMap[lang];
+	return (languageMap['en-GB']) ? languageMap['en-GB'] : languageMap[lang];
 }
 
 
@@ -71,3 +71,5 @@ $.extend({
     return $.getUrlVars()[name];
   }
 });
+
+

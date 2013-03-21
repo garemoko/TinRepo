@@ -67,6 +67,10 @@ var legalActivityTypes = [
 	"http://tincanapi.co.uk/tinrepo/activitytypes/activity_profile_api_document"
 ];
 
+//BaseURI
+var baseURI = {};
+baseURI.activityTypes ="http://tincanapi.co.uk/tinrepo/activitytypes/";
+
 //Details of the admin account hard coded here for now as a single item array of objects
 var adminAuth = [{
 	objectType:"Agent",
@@ -460,20 +464,19 @@ function outputrepositoryItems(repositoryItems){
 	$.each(repositoryItems, function(i, repositoryItem){
 		
 		var itemDiv = $('<div id="' + encodeURIComponent(repositoryItem.id) + '" class="section ' + repositoryItem.type + ' ' + repositoryItem.status + '"></div>');
-		itemDiv.append('<h2><a target="blank" href="' + repositoryItem.id + '">' + repositoryItem.definition.name + '</a></h2>');
+		itemDiv.append('<h2><a target="blank" href="' + repositoryItem.id + '">' + getLangFromMapInGBOrDefault(repositoryItem.definition.name) + '</a></h2>');
 		var propertiesTable = $('<table></table>');
-		propertiesTable.append(propertiesTableRow('Extension type', repositoryItem.type));
+		propertiesTable.append(propertiesTableRow('Extension type', repositoryItem.definition.type.slice(baseURI.activityTypes.length)));
 		propertiesTable.append(propertiesTableRow('Extension status', repositoryItem.status));
 		itemDiv.append(propertiesTable);
-		itemDiv.append('<p>' + repositoryItem.definition.description + '</p>');
+		itemDiv.append('<p>' + getLangFromMapInGBOrDefault(repositoryItem.definition.description) + '</p>');
 		
-		console.log(itemDiv.html);
 		$('body').append(itemDiv);
 	});
 	
 }
 
 function propertiesTableRow (label,value){
-	return '<tr><td class="label">' + label + ':</td><td>' + value + '</td></tr>';
+	return '<tr><td class="label grey">' + label + ':</td><td class="grey2">' + value + '</td></tr>';
 }
 
