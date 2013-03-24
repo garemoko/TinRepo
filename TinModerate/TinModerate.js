@@ -22,8 +22,6 @@ GNU General Public License for more details.
 /*============DOCUMENT READY==============*/
 $(function(){
 	
-	alert (_.isEqual({msg:'hi',name:'ho'},{msg:'hi'}));
-	
 	//Set Up LRS
 	//Add one blank LRS to the page by default
 	appendLRS();

@@ -81,12 +81,19 @@ var adminAuth = [{
 	}]
 	
 //Moderator details - an object with properties credentials and actor
-var moderator = getObjectFromQueryString(params);
+var moderator = getObjectFromQueryString("params");
 
 
 //============DOCUMENT READY=============================
 $(function(){
 	
+	//For debugging, if moderator credentials are provided, output these to the console. 
+	//We'll add the moderator buttons later when the repository items are added to the page. 
+	if (!(typeof moderator === "undefined"))
+	{
+		console.log (JSON.stringify(moderator));
+		
+	}
 	
 	console.log (new Date().getTime() + ' HTML page loaded. LRS data retrieval will begin in a few milliseconds...');
 	
@@ -471,9 +478,24 @@ function outputrepositoryItems(repositoryItems){
 	//For each repo item...
 	$.each(repositoryItems, function(i, repositoryItem){
 		
-		var itemDiv = $('<div id="' + encodeURIComponent(repositoryItem.id) + '" class="section ' + repositoryItem.type + ' ' + repositoryItem.status + '"></div>');
+		var itemId = encodeURIComponent(repositoryItem.id);
+		var itemDiv = $('<div id="' + itemId + '" class="section repositoryItemDiv' + repositoryItem.type + ' ' + repositoryItem.status + '"></div>');
+		
+		//Add extension title
 		itemDiv.append('<h2><a target="blank" href="' + repositoryItem.id + '">' + getLangFromMapInGBOrDefault(repositoryItem.definition.name) + '</a></h2>');
+		
 		var propertiesTable = $('<table></table>');
+		
+		//Add moderator buttons
+		if (!(typeof moderator === "undefined"))
+		{ 
+			
+			propertiesTable.append('<tr><td colspan="2" class="buttonHolder">' + moderatorButton('accept', itemId) + moderatorButton('recognise', itemId) + '</td></tr>'
+			+ '<tr><td colspan="2" class="buttonHolder">' + moderatorButton('deprecate', itemId) + moderatorButton('revert', itemId) + '</td></tr>');
+		}
+		
+		//Add properties header
+		
 		propertiesTable.append(propertiesTableRow('Extension type', repositoryItem.definition.type.slice(baseURI.activityTypes.length)));
 		propertiesTable.append(propertiesTableRow('Extension status', repositoryItem.status));
 		itemDiv.append(propertiesTable);
@@ -482,9 +504,27 @@ function outputrepositoryItems(repositoryItems){
 		$('body').append(itemDiv);
 	});
 	
+	//Add funtionality to moderator buttons
+	if (!(typeof moderator === "undefined"))
+	{
+		$('.moderatorButton').click(function(){
+			//send a statement carrying out the action
+			//agent - moderator.agent
+			//verb - based on class of button (i.e. which button was clicked)
+			//object - look up details of activity in repository itemsbased on id of parent div (Note, this is URI encoded). 
+			//repositoryItems may need to be refactored as a global variable. 
+			//$(this).parents.('.repositoryItemDiv').attr('id'); 
+			//LRS - built using the standard enpoint and moderator.credentials
+		});
+	}
+	
 }
 
 function propertiesTableRow (label,value){
 	return '<tr><td class="label grey">' + label + ':</td><td class="grey2">' + value + '</td></tr>';
+}
+
+function moderatorButton (action, itemId){
+	return '<input type="button" value="' + capitaliseFirstLetter(action) + '" name="' + itemId + '_' + action + '" id="' + itemId + '_' + action + '" class="button moderatorButton' + action + 'Extension" /> ';
 }
 
