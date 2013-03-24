@@ -1,0 +1,77 @@
+<!--
+=============COPYRIGHT============
+Prototype for Tin Can API
+Copyright (C) 2012  Andrew Downes
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+<http://www.gnu.org/licenses/>.
+
+=============CREDITS============
+Thanks to Rustici Software for provision of TCDriver.js which powers
+the calls to the Tin Can API and for developing the Tin Can API
+TCDriver.js is reproduced here by permission under the understanding that
+it is still a prototype. It comes from the prototype package found at:
+http://scorm.com/project-tin-can-phase-3-prototyping-tin-can-content-outside-of-the-lms/
+
+=============DEVELOPMENT STATUS============
+This software is currently in development and is NOT intended to be used
+in a live situation.
+
+-->
+<!doctype html>
+<meta http-equiv="X-UA-Compatible" content="IE=Edge">
+<html>
+	<head>
+		
+		<meta name="viewport" content="width=600, initial-scale=1">
+		<title>I Moderated This</title>
+		<link rel="stylesheet" href="../tinrepo.css" type="text/css" />
+		<!-- jquery  
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>-->
+		<script src="../js-lib/jquery-1.7.1.min.js"></script>
+		<script src="../js-lib/lodash.min.js"></script>
+
+
+		<!-- Base64 
+		<script src="http://tin-can-can.googlecode.com/files/base64.js"></script>-->
+		<script src="../js-lib/base64.js"></script>
+
+		<!-- generic functions used for capturing all or part of a statement with a web form (relies on certain HTML) -->
+		<script src="../TinFormFunctions.js"></script>
+		<!-- main js file for this wrapper -->
+		<script src="TinModerate.js"></script>
+
+	</head>
+	<body >
+
+		<h1>Moderator Interface Launch Tool</h1>
+		<p>
+			Blah Blah text ipsum
+		</p>
+
+		<div class="section" id="lrs">
+			<div class="background_div sevenEM">
+				Dear LRS,
+			</div>
+			<h2>Credentials</h2>
+			<p>
+				Your username and password for the repository:
+			</p>
+
+		</div>
+		
+
+<input type="button" value="Moderate!" name="sendStatement" id="sendStatement" class="button"/>
+
+		<noscript>
+			This tool requires JavaScript to be enabled in your browser. Please enable JavaScript, then relaunch the tool.
+		</noscript>
+	</body>
+</html>

@@ -30,7 +30,7 @@ var myTinCan = new TinCan();
 var myLRS = new TinCan.LRS({
 	endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/", 
 	version: "0.95",
-	auth: 'Basic ' + Base64.encode("gddikCN6KrbdWZaXq36T" + ':' + "b7Q21MPlattwRn964bVW")
+	auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv')
 });
 
 myTinCan.recordStores[0] = myLRS;
@@ -79,9 +79,15 @@ var adminAuth = [{
 		homePage:"https://mrandrewdownes.waxlrs.com/TCAPI"
 		}
 	}]
+	
+//Moderator details - an object with properties credentials and actor
+var moderator = getObjectFromQueryString(params);
+
 
 //============DOCUMENT READY=============================
 $(function(){
+	
+	
 	console.log (new Date().getTime() + ' HTML page loaded. LRS data retrieval will begin in a few milliseconds...');
 	
 	//Get all the data from the LRS. Calls getDataComplete when all requests are complete. 
@@ -289,8 +295,10 @@ function matchModeratorStatement(moderatorManagementStatements,moderatorManageme
 	for (var i = 0; i < moderatorManagementStatementsLength; i++) {
 		var moderatorManagementStatement = moderatorManagementStatements[i];
 		//Find the most recent moderator management statement whose object matches the statement being validated.
+		//TODO: either allow for using inverse functional identifiers other than account, or validate moderator management statements to filter out those that
+		//don't use account. 
 		//To match, the timestamp of the moderator management statement must be before (or equal to) the stored property of the statement being validated
-		if (_.isEqual(deleteEmptyProperties(moderatorManagementStatement.target),deleteEmptyProperties(statementToValidate.authority))
+		if (_.isEqual(deleteEmptyProperties(moderatorManagementStatement.target.account),deleteEmptyProperties(statementToValidate.authority.account))
 		&& (Date.parse(moderatorManagementStatement.timestamp) <= parsedStoredOfStatementToValidate)) {
 			//return that a match has been found and give the timestamp.
 			return {

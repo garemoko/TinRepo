@@ -35,6 +35,20 @@ function getLRSFromQueryString()
 	}
 }
 
+function getObjectFromQueryString(objectToGet)
+{
+	var qString = $.getUrlVar(objectToGet);
+	
+	if (!(qString == undefined))
+	{
+		return JSON.parse(urldecode(qString));
+	}
+	else
+	{
+		return;
+	}
+}
+
 
 function ObjectTypeChanged (event)
 {
