@@ -1,6 +1,6 @@
 /*
 =============COPYRIGHT============ 
-Tin Statement Sender - An I-Did-This prototype for Tin Can API 0.95
+Tin Submit
 Copyright (C) 2012  Andrew Downes
 
 This program is free software: you can redistribute it and/or modify
@@ -34,16 +34,8 @@ $(function(){
 	$('#actorObjectType').change({elementId: 'actor'},ObjectTypeChanged);
 	$('#actorAgentAdd').click({elementId: 'actorAgent'},appendAgentOnEvent);
 	$('#actorAgentRemove').click({elementId: 'actorAgent', propertyClass: 'agent', minimum:1},removeProperty);
-
-	//Set up Verb
-	var languageMap = new Array();
-	languageMap[0] = "en-GB";
-	languageMap[1] = "en-US";
-	//Add 2 fields to start with
-	appendLanguageMap('verb','display',2, languageMap);
-	$('#verbDisplayAdd').click({elementId: 'verb', propertyClass: 'display', languageMap: languageMap},appendLanguageMapOnEvent); 
-	$('#verbDisplayRemove').click({elementId: 'verb', propertyClass: 'display', minimum:0},removeProperty);
 	
+	var languageMap = ["en-GB","en-US"];
 	
 	//set up Object
 	$('#objectType').change({elementId: 'object'},ObjectTypeChanged);
@@ -54,19 +46,6 @@ $(function(){
 	appendLanguageMap('activity','description',2, languageMap);
 	$('#activityDescriptionAdd').click({elementId: 'activity', propertyClass: 'description', languageMap: languageMap},appendLanguageMapOnEvent); 
 	$('#activityDescriptionRemove').click({elementId: 'activity', propertyClass: 'description', minimum:0},removeProperty);
-	
-	var extensionMap = new Array();
-	//appendLanguageMap('activity','activityExtension',2, extensionMap);
-	$('#activityExtensionRemove').addClass('displayNone')
-	$('#activityExtensionAdd').click({elementId: 'activity', propertyClass: 'extension', languageMap: extensionMap},appendLanguageMapOnEvent); 
-	$('#activityExtensionRemove').click({elementId: 'activity', propertyClass: 'extension', minimum:0},removeProperty);
-	
-	//Agent/Group
-	appendGroup('objectAgent').addClass('displayNone');
-	appendAgent('objectAgent');
-	$('#objectAgentAdd').click({elementId: 'objectAgent'},appendAgentOnEvent);
-	$('#objectAgentRemove').click({elementId: 'objectAgent', propertyClass: 'agent', minimum:1},removeProperty);
-
 
 
 	//send statement
@@ -99,18 +78,18 @@ function statementGeneratorSendStatement()
 	
 	myTinCan.DEBUG = 1;
 	
+	//TODO: get this data from a properties file in root (or XML or properties.js or something)
 	//LRS
-	$('#lrs').find('.lrs').each(function(index){
-		var myLRS = new TinCan.LRS({
-			endpoint:$(this).find('.endpoint').val(), 
-			version: "0.95",
-			auth: 'Basic ' + Base64.encode($(this).find('.basicLogin').val() + ':' + $(this).find('.basicPass').val())
-		});
-		myTinCan.recordStores[index] = myLRS;
+
+	var myLRS = new TinCan.LRS({
+		endpoint: 'https://mrandrewdownes.waxlrs.com/TCAPI/', 
+		version: '0.95',
+		auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv')
 	});
+	myTinCan.recordStores[0]= myLRS;
 	
 	
-	//actor - TODO: factor this better
+	//actor - TODO: factor this better (do this in TinStatement and copy code across)
 	switch($('#actorObjectType').val())
 	{
 		case 'Agent':
@@ -191,90 +170,48 @@ function statementGeneratorSendStatement()
 		break;
 	}
 	
-	
-
 	//verb
-	var myVerbDisplay = new Object();
-	$('#verb').find('.display').each(function(index) {
-	   myVerbDisplay[$(this).find('.displayKey').val()] = $(this).find('.displayValue').val()
-	 });
-	 myVerbDisplay = deleteEmptyProperties(myVerbDisplay);
 	var myVerb = new TinCan.Verb({
-		id : $('#verb').find('.verbId').val(),
-		display : myVerbDisplay
+		id : "http://tincanapi.co.uk/tinrepo/verbs/registered_extension",
+		display : {
+			"en-GB" : "Registered Extension",
+			"en-US" : "Registered Extension"
+		}
 	});
 	 
 	
 	//Object
-	//TODO: ADD OTHER OBJECT TYPES
 	var myTarget;
 	
-	switch ($('#objectType').val())
-	{
-		case "Activity":
-			//activity
-			//Create the activity definition
-			var myActivityDefinitionName = new Object();
-			 $('#activity').find('.name').each(function(index) {
-			   myActivityDefinitionName[$(this).find('.nameKey').val()] = $(this).find('.nameValue').val()
-			 });
-			 var myActivityDefinitionDescription = new Object();
-			 $('#activity').find('.description').each(function(index) {
-			   myActivityDefinitionDescription[$(this).find('.descriptionKey').val()] = $(this).find('.descriptionValue').val()
-			 });
-			 var myActivityDefinitionExtensions = new Object();
-			  $('#activity').find('.extension').each(function(index) {
-			   myActivityDefinitionExtensions[$(this).find('.extensionKey').val()] = $(this).find('.extensionValue').val()
-			 });
-			 
-			 var myActivityDefinition = new TinCan.ActivityDefinition({
-				type : $('#activity').find('.activityType').val(),
-				name:  myActivityDefinitionName,
-				description:  myActivityDefinitionDescription,
-				extensions:  myActivityDefinitionExtensions
-			});
-			
-			//Create the activity
-			var myActivity = new TinCan.Activity({
-				id : $('#activity').find('.activityId').val(),
-				definition : myActivityDefinition
-			});
-			
-			myTarget = myActivity;
-		break;
-		case "Agent":
-			var myObjectAgent;
-			if ($('#objectAgent').find('.agent:first').find('.functionalIdentifierType').val() == 'account')
-			{
-				console.log('account');
-				myObjectAgent= new TinCan.Agent({
-				name : $('#objectAgent').find('.agent:first').find('.name').val(),
-				objectType : "Agent",
-				account: {
-					name:$('#objectAgent').find('.agent:first').find('.accountHomePage').val(),
-					homePage:$('#objectAgent').find('.agent:first').find('.accountName').val()
-					}
-				});
-				
-				console.log ('myActor: ' + JSON.stringify(myActor));
-			}
-			else
-			{
-				console.log($('#objectAgent').find('.functionalIdentifierType').val());
-				myObjectAgent= new TinCan.Agent({
-				name : $('#objectAgent').find('.agent:first').find('.name').val()
-				});
-				myObjectAgent[$('#objectAgent').find('.agent:first').find('.functionalIdentifierType').val()] = $('#objectAgent').find('.agent:first').find('.functionalIdentifier').val();
-				myObjectAgent.objectType = "Agent";
-			}
-						
-			myTarget = myObjectAgent;
-		break;
-		
-	}
+	//Create the activity definition
+	var myActivityDefinitionName = new Object();
+	 $('#activity').find('.name').each(function(index) {
+	   myActivityDefinitionName[$(this).find('.nameKey').val()] = $(this).find('.nameValue').val()
+	 });
+	 var myActivityDefinitionDescription = new Object();
+	 $('#activity').find('.description').each(function(index) {
+	   myActivityDefinitionDescription[$(this).find('.descriptionKey').val()] = $(this).find('.descriptionValue').val()
+	 });
+	 var myActivityDefinitionExtensions = new Object();
+	  $('#activity').find('.extension').each(function(index) {
+	   myActivityDefinitionExtensions[$(this).find('.extensionKey').val()] = $(this).find('.extensionValue').val()
+	 });
+	 
+	 var myActivityDefinition = new TinCan.ActivityDefinition({
+		type : $('#activity').find('.activityType').val(),
+		name:  myActivityDefinitionName,
+		description:  myActivityDefinitionDescription,
+		extensions:  myActivityDefinitionExtensions
+	});
 	
-	console.log ('myActor: ' + JSON.stringify(myActor));
-	console.log ('target: ' + JSON.stringify(deleteEmptyProperties(myTarget)));
+	//Create the activity
+	var myActivity = new TinCan.Activity({
+		id : $('#activity').find('.activityId').val(),
+		definition : myActivityDefinition
+	});
+	
+	myTarget = myActivity;
+	
 	var stmt = new TinCan.Statement({
 		actor : deleteEmptyProperties(myActor),
 		verb : deleteEmptyProperties(myVerb),
@@ -283,6 +220,8 @@ function statementGeneratorSendStatement()
 	
 	console.log ('sending: ' + JSON.stringify(stmt));
 	
-	myTinCan.sendStatement(stmt, function() {});
+	//TODO: add callback confirming that the extension has been registered. 
+	myTinCan.sendStatement(stmt, function(err, xhr) {
+	});
 }
 

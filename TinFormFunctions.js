@@ -16,6 +16,7 @@ GNU General Public License for more details.
 
 
 
+
 function getLRSFromQueryString()
 {
 	var lrs = $.getUrlVar('lrs');
