@@ -609,7 +609,8 @@ function outputrepositoryItems(repositoryItems){
 			
 			myTinCan.sendStatement(stmt, function() {});
 			
-			//TODO: edit the div to show the result of the action 
+			//Edit the div to show the result of the action 
+			//TODO: only update the status based on the rules in the profile. 
 			//get old status from repositoryItemToModerate
 			//remove class from div
 			repositoryItemParentDiv.removeClass(repositoryItemToModerate.status);
