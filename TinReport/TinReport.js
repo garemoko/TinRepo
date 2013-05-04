@@ -1,7 +1,7 @@
 
 /*
 =============COPYRIGHT============ 
-Tin Statement Sender - An I-Did-This prototype for Tin Can API 0.95
+Tin Report - A prototype for Tin Can API 1.0.0
 Copyright (C) 2012  Andrew Downes
 
 This program is free software: you can redistribute it and/or modify
@@ -26,14 +26,6 @@ GNU General Public License for more details.
 var myTinCan = new TinCan();
 
 //============SETTINGS=================================
-//Create an LRS and add to the list of record stores
-var myLRS = new TinCan.LRS({
-	endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/", 
-	version: "0.95",
-	auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv')
-});
-
-myTinCan.recordStores[0] = myLRS;
 
 myTinCan.DEBUG = 0;
 
@@ -46,7 +38,8 @@ revertExtensionStatements,
 deprecateExtensionStatements,
 recogniseExtensionStatements,
 acceptExtensionStatements,
-registerExtensionStatements;
+registerExtensionStatements,
+moderatorLoginStatement;
 
 
 //track the number of LRS requests completed:
@@ -73,7 +66,6 @@ baseURI.activityTypes ="http://tincanapi.co.uk/tinrepo/activitytypes/";
 
 //Details of the admin account hard coded here for now as a single item array of objects
 var adminAuth = [{
-	objectType:"Agent",
 	account:{
 		name:"gddikCN6KrbdWZaXq36T@mrandrewdownes",
 		homePage:"https://mrandrewdownes.waxlrs.com/TCAPI"
@@ -83,17 +75,25 @@ var adminAuth = [{
 //Moderator details - an object with properties credentials and actor
 var moderator = getObjectFromQueryString("params");
 
+//Create an LRS with public credentials and add to the list of record stores
+var myLRS = new TinCan.LRS({
+	endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/", 
+	version: "0.95",
+	auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv')
+});
+
+//If moderator credentials are provided, use those instead. 
+if (!(typeof moderator === "undefined"))
+{
+	myLRS.auth = 'Basic ' + Base64.encode(moderator.credentials.login + ':' + moderator.credentials.pass)
+}
+
+myTinCan.recordStores[0] = myLRS;
+
+
 
 //============DOCUMENT READY=============================
 $(function(){
-	
-	//For debugging, if moderator credentials are provided, output these to the console. 
-	//We'll add the moderator buttons later when the repository items are added to the page. 
-	if (!(typeof moderator === "undefined"))
-	{
-		console.log (JSON.stringify(moderator));
-		
-	}
 	
 	console.log (new Date().getTime() + ' HTML page loaded. LRS data retrieval will begin in a few milliseconds...');
 	
@@ -119,8 +119,7 @@ function getDataFromLRS()
 	//get the make moderator statements
 	myTinCan.getStatements({
 		params:{
-			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"},
-			sparse:false
+			verb:{id:"http://tincanapi.co.uk/tinrepo/verbs/make_moderator"}
 		},
 		callback: getMakeModerator
 	});
@@ -172,8 +171,20 @@ function getDataFromLRS()
 		},
 		callback: getRegisterExtension
 	});
-
 	
+	/* TODO: make this work
+	if (!(typeof moderator === "undefined"))
+	{
+		console.log(moderator.loginStatementId);
+		LRSGetsDue++;
+		//get the make moderator statements
+		myTinCan.getStatement({
+			id:moderator.loginStatementId,
+			callback: getModeratorLogin
+		})
+	}
+	*/
+
 }
 
 function getMakeModerator(err,result){	
@@ -213,6 +224,11 @@ function getRegisterExtension (err,result){
 	handleDataReturned();
 }
 
+function getModeratorLogin (err,result){
+	moderatorLoginStatement = result.statements;
+	handleDataReturned();
+}
+
 function handleDataReturned ()
 {
 	LRSGetsCompleted++
@@ -230,19 +246,18 @@ function validateStatements ()
 {
 	console.log (new Date().getTime() + ' Validating returned data...');
 	
-	//validate moderator statements
+	//validate administrator statements
 	makeModeratorStatements = validateAdministratorStatements(makeModeratorStatements);
 	revokeModeratorStatements = validateAdministratorStatements(revokeModeratorStatements);
 	//save the length as this will be used lots and will not change from here onwards
 	makeModeratorStatementsLength = makeModeratorStatements.length;
 	revokeModeratorStatementsLength = revokeModeratorStatements.length;
 
-	//Validate administrator statements
+	//Validate moderator statements
 	revertExtensionStatements = validateModeratorStatements(revertExtensionStatements);
 	deprecateExtensionStatements = validateModeratorStatements(deprecateExtensionStatements);
 	recogniseExtensionStatements = validateModeratorStatements(recogniseExtensionStatements);
 	acceptExtensionStatements = validateModeratorStatements(acceptExtensionStatements);
-	//save the length as this will be used lots and will not change from here onwards
 	
 	//Validate public statements
 	registerExtensionStatements = validatePublicStatements(registerExtensionStatements);
@@ -264,6 +279,8 @@ function validateAdministratorStatements(statements){
 	);
 }
 
+//This function checks an array of statements to see if their authorities were moderators at the time the statement was made.
+//It returns an array of statements where this was true. 
 function validateModeratorStatements(statements){
 	var authorisedStatements = new Array(),
 	statementsLength = statements.length;
@@ -275,13 +292,14 @@ function validateModeratorStatements(statements){
 		matchingMakeModeratorStatement = matchModeratorStatement(makeModeratorStatements,makeModeratorStatementsLength,statement),
 		//get the most recent time the authority was demoted from moderator prior to the stored time of the current statement
 		matchingRevokeModeratorStatement = matchModeratorStatement(revokeModeratorStatements,revokeModeratorStatementsLength,statement);
-		
 		//If we have found a matching make moderator statement 
 		//AND EITHER we have not found a matching revoke moderator statement OR the make moderator statement is most recent, THEN...
 		if ((matchingMakeModeratorStatement.success) 
-		&& ((!matchingRevokeModeratorStatement.success)||(matchingMakeModeratorStatement.timestamp >= matchingRevokeModeratorStatement.timestamp))){
+		&& ((!matchingRevokeModeratorStatement.success)||(Date.parse(matchingMakeModeratorStatement.timestamp) >= Date.parse(matchingRevokeModeratorStatement.timestamp)))){
 			authorisedStatements.push(statement);
+			console.log ('success');
 		}
+
 	}
 	
 	//Check that the activity type is valid
@@ -295,6 +313,8 @@ function validateModeratorStatements(statements){
 	);
 }
 
+//This function checks if any moderator management statements have modified made the statement authority's moderator status prior to the stored property of the statement.
+//If so, it returns the most recent timestamp that the authority's moderator status was modified. 
 function matchModeratorStatement(moderatorManagementStatements,moderatorManagementStatementsLength,statementToValidate)
 {
 	var parsedStoredOfStatementToValidate = Date.parse(statementToValidate.stored);
@@ -307,12 +327,14 @@ function matchModeratorStatement(moderatorManagementStatements,moderatorManageme
 		//To match, the timestamp of the moderator management statement must be before (or equal to) the stored property of the statement being validated
 		if (_.isEqual(deleteEmptyProperties(moderatorManagementStatement.target.account),deleteEmptyProperties(statementToValidate.authority.account))
 		&& (Date.parse(moderatorManagementStatement.timestamp) <= parsedStoredOfStatementToValidate)) {
+			
 			//return that a match has been found and give the timestamp.
 			return {
 				success:true,
 				timestamp:moderatorManagementStatement.timestamp
 			};
 		}
+		
 	}
 	//No match found
 	return {
@@ -338,7 +360,6 @@ function validateAuth(statements,auths)
 	var returnStatements = new Array(),
 	statementsLength = statements.length,
 	authsLength = auths.length;
-	
 	//cycle through the array of statements
 	for (var i = 0; i < statementsLength; i++) {
 		//get the current statement
@@ -353,7 +374,7 @@ function validateAuth(statements,auths)
 				returnStatements.push(statement);
 				//just in case the authority appears in our array twice, break the auths loop
 				break;
-			}
+			}			
 		}
 	}
 	//return an array of statements with invalid statements not included. 
@@ -426,6 +447,7 @@ function buildRespositoryObject (){
 	//Accept any extensions that have been accepeted after the most recent time they were reverted
 	var acceptExtensionStatementsLength = acceptExtensionStatements.length;
 	for (var i = 0; i < acceptExtensionStatementsLength; i++) {
+		console.log (i);
 		repositoryItems = modifyRepository(repositoryItems, acceptExtensionStatements[i], "accepted", ["deprecated","recognised","accepted"])
 	}
 
@@ -439,12 +461,16 @@ function modifyRepository(repositoryItems, statement, status, dontOverwrite)
 	//if the extension already exists in the repository object..
 	if (repositoryItems.hasOwnProperty(extensionId))
 	{
+		console.log ('exists');
+		console.log ($.inArray(repositoryItems[extensionId].status, dontOverwrite));
 		//if timstamp is older than the current statement and the status is ok to overwrite
 		if((Date.parse(repositoryItems[extensionId].modified) < Date.parse(statement.stored))
-		&&(!$.inArray(repositoryItems[extensionId].status, dontOverwrite))){
+		&&($.inArray(repositoryItems[extensionId].status, dontOverwrite) == -1 )){
+			console.log ('true');
 			repositoryItems[extensionId].status = status;
 			repositoryItems[extensionId].modified = statement.stored;
 		}
+		
 	}
 	else{
 		//create the extension in the repository object
@@ -475,11 +501,15 @@ function sortStatementsByTimestamp(statements)
 
 function outputrepositoryItems(repositoryItems){
 		console.log(JSON.stringify(repositoryItems));
+	
+	var isModerator = checkIfModerator();	
+	
 	//For each repo item...
 	$.each(repositoryItems, function(i, repositoryItem){
 		
 		var itemId = encodeURIComponent(repositoryItem.id);
-		var itemDiv = $('<div id="' + itemId + '" class="section repositoryItemDiv' + repositoryItem.type + ' ' + repositoryItem.status + '"></div>');
+		var itemDiv = $('<div id="' + itemId + '" class="section repositoryItemDiv ' + repositoryItem.definition.type + ' ' + repositoryItem.status + '"></div>');
+		itemDiv.attr('data-repositoryItem', JSON.stringify(repositoryItem));
 		
 		//Add extension title
 		itemDiv.append('<h2><a target="blank" href="' + repositoryItem.id + '">' + getLangFromMapInGBOrDefault(repositoryItem.definition.name) + '</a></h2>');
@@ -487,9 +517,8 @@ function outputrepositoryItems(repositoryItems){
 		var propertiesTable = $('<table></table>');
 		
 		//Add moderator buttons
-		if (!(typeof moderator === "undefined"))
+		if (isModerator)
 		{ 
-			
 			propertiesTable.append('<tr><td colspan="2" class="buttonHolder">' + moderatorButton('accept', itemId) + moderatorButton('recognise', itemId) + '</td></tr>'
 			+ '<tr><td colspan="2" class="buttonHolder">' + moderatorButton('deprecate', itemId) + moderatorButton('revert', itemId) + '</td></tr>');
 		}
@@ -505,17 +534,71 @@ function outputrepositoryItems(repositoryItems){
 	});
 	
 	//Add funtionality to moderator buttons
-	if (!(typeof moderator === "undefined"))
+	if (isModerator)
 	{
 		$('.moderatorButton').click(function(){
+			
 			//send a statement carrying out the action
-			//agent - moderator.agent
-			//verb - based on class of button (i.e. which button was clicked)
-			//object - look up details of activity in repository itemsbased on id of parent div (Note, this is URI encoded). 
+			//object - look up details of activity in repository items based on id of parent div (Note, this is URI encoded). 
 			//repositoryItems may need to be refactored as a global variable. 
 			//$(this).parents.('.repositoryItemDiv').attr('id'); 
 			//LRS - built using the standard enpoint and moderator.credentials
+			
+
+			//Actor
+			var myActor = moderator.actor;
+			myTinCan.actor = myActor;
+			
+			//Verb
+			var verbId, verbDisplay;
+			
+			if ($(this).hasClass('accept')){
+				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/accepted_extension';
+				verbDisplay = 'accepted extension';
+			} else if ($(this).hasClass('recognise')){
+				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/recognised_extension';
+				verbDisplay = 'recognised extension';
+			} else if ($(this).hasClass('deprecate')){
+				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension';
+				verbDisplay = 'deprecate extension';
+			} else if ($(this).hasClass('revert')){
+				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/reverted_extension';
+				verbDisplay = 'reverted extension';
+			} 
+			
+			var myVerb = new TinCan.Verb({
+				id : verbId,
+				display : {
+					"en-GB" : verbDisplay,
+					"en-US" : verbDisplay
+				}
+			});
+			 
+			
+			//Object
+			var repositoryitemToModerate = JSON.parse($(this).parents('.repositoryItemDiv').attr('data-repositoryItem')); 
+			var myActivityDefinition = new TinCan.ActivityDefinition(repositoryitemToModerate.definition);
+			
+			//Create the activity
+			var myActivity = new TinCan.Activity({
+				id : repositoryitemToModerate.id,
+				definition : myActivityDefinition
+			});
+			
+			var stmt = new TinCan.Statement({
+				actor : deleteEmptyProperties(myActor),
+				verb : deleteEmptyProperties(myVerb),
+				target : deleteEmptyProperties(myActivity)
+			},true);
+			
+			console.log ('sending: ' + JSON.stringify(stmt));
+			
+			myTinCan.sendStatement(stmt, function() {});
+			
+			//TODO: edit the div
 		});
+		
+		//TODO: grey out and disable buttons that do nothing
 	}
 	
 }
@@ -525,6 +608,21 @@ function propertiesTableRow (label,value){
 }
 
 function moderatorButton (action, itemId){
-	return '<input type="button" value="' + capitaliseFirstLetter(action) + '" name="' + itemId + '_' + action + '" id="' + itemId + '_' + action + '" class="button moderatorButton' + action + 'Extension" /> ';
+	return '<input type="button" value="' + capitaliseFirstLetter(action) + '" name="' + itemId + '_' + action + '" id="' + itemId + '_' + action + '" class="button moderatorButton ' + action + ' Extension" /> ';
 }
+
+function checkIfModerator()
+{
+	if (typeof moderator === "undefined") 
+	{
+		return false;
+	}
+	else
+	{
+		//TODO: check if the moderator statement has been recorded in the LRS and if the authority is a moderator (use the validateModeratorStatements function and pass in an array of statements)
+		return true;
+	}
+
+}
+
 

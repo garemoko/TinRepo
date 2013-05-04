@@ -14,9 +14,9 @@ GNU General Public License for more details.
 <http://www.gnu.org/licenses/>.
 */
 
-
-
-
+//Create an instance of the Tin Can Library
+var myTinCan = new TinCan();
+myTinCan.DEBUG = 1;
 
 
 /*============DOCUMENT READY==============*/
@@ -32,15 +32,16 @@ $(function(){
 	$('.basicLogin').val('9yqDHeqmp5hP8us4YJKq');
 	$('.basicPass').val('dujAptG9qkljj5ysrZAf');
 	
-	//send statement
+	//send statement and launch the moderator UI
 	$('#sendStatement').click(launchModeratorUI);
 });
 /*============END DOCUMENT READY==============*/
 
 
-/*============SEND STATEMENT==============*/
+/*============LAUNCH MODERATOR UI==============*/
 function launchModeratorUI()
 {
+	var UUID = TinCan.Utils.getUUID();
 	var launchString = {
 		credentials : {
 			login : $('.basicLogin').val(),
@@ -53,11 +54,78 @@ function launchModeratorUI()
 				name: $('.basicLogin').val() + "@mrandrewdownes",
 				homePage: "https://mrandrewdownes.waxlrs.com/TCAPI"
 			}
-		}
+		},
+		loginStatementId : UUID
 	};
 	
-	var launchLink = '../TinReport/tinreport.htm?params=' + JSON.stringify(launchString);
-	
-	window.open(launchLink);
+	SendILoggedInStatement('../TinReport/tinreport.htm?params=' + JSON.stringify(launchString), UUID);
+
 }
 
+function SendILoggedInStatement(launchLink, StatementId)
+{
+
+	
+	//LRS
+	$('#lrs').find('.lrs').each(function(index){
+		var myLRS = new TinCan.LRS({
+			endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/",
+			version: "0.95",
+			auth: 'Basic ' + Base64.encode($(this).find('.basicLogin').val() + ':' + $(this).find('.basicPass').val())
+		});
+		myTinCan.recordStores[index] = myLRS;
+	});
+	
+	//actor
+	var myActor = {
+		objectType:"Agent",
+		account:
+		{
+			name: $('.basicLogin').val() + "@mrandrewdownes",
+			homePage: "https://mrandrewdownes.waxlrs.com/TCAPI"
+		}
+	};
+	myTinCan.actor = myActor;
+
+	//verb
+	var myVerb = new TinCan.Verb({
+		id : "http://tincanapi.co.uk/tinrepo/verbs/logged_in_to",
+		display : {
+			"en-GB" : "logged in to",
+			"en-US" : "logged in to"
+		}
+	});
+	 
+	
+	//Object
+	 var myActivityDefinition = new TinCan.ActivityDefinition({
+		type : "http://tincanapi.co.uk/tinrepo/activitytypes/repository",
+		name:  {
+			"en-GB" : "TinRepo",
+			"en-US" : "TinRepo"
+		},
+		description:  {
+			"en-GB" : "A repository for Tin Can API extensions",
+			"en-US" : "A repository for Tin Can API extensions"
+		}
+	});
+	
+	//Create the activity
+	var myActivity = new TinCan.Activity({
+		id : "http://tincanapi.co.uk/tinrepo",
+		definition : myActivityDefinition
+	});
+
+	
+	var stmt = new TinCan.Statement({
+		id: StatementId,
+		actor : myActor,
+		verb : myVerb,
+		target : myActivity
+	},true);
+	
+	console.log ('sending: ' + JSON.stringify(stmt));
+	
+	//send statement and launch moderator interface
+	myTinCan.sendStatement(stmt, function() {window.open(launchLink)});
+}

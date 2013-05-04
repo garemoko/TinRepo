@@ -440,7 +440,7 @@ TinCan client library
             @param {Function} [cfg.callback] Callback to execute on completion
         */
         saveStatement: function (stmt, cfg) {
-            this.log("saveStatement");
+
             var requestCfg;
 
             // TODO: it would be better to make a subclass that knows
