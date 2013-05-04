@@ -39,7 +39,7 @@ deprecateExtensionStatements,
 recogniseExtensionStatements,
 acceptExtensionStatements,
 registerExtensionStatements,
-moderatorLoginStatement;
+moderatorLoginStatements;
 
 
 //track the number of LRS requests completed:
@@ -57,7 +57,8 @@ var legalActivityTypes = [
 	"http://tincanapi.co.uk/tinrepo/activitytypes/attachment_extension",
 	"http://tincanapi.co.uk/tinrepo/activitytypes/state_api_document",
 	"http://tincanapi.co.uk/tinrepo/activitytypes/agent_profile_api_document",
-	"http://tincanapi.co.uk/tinrepo/activitytypes/activity_profile_api_document"
+	"http://tincanapi.co.uk/tinrepo/activitytypes/activity_profile_api_document",
+	"http://tincanapi.co.uk/tinrepo/activitytypes/repository"
 ];
 
 //BaseURI
@@ -79,8 +80,10 @@ var moderator = getObjectFromQueryString("params");
 var myLRS = new TinCan.LRS({
 	endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/", 
 	version: "0.95",
-	auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv')
+	auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv'),
 });
+
+myLRS.alertOnRequestFailure = false;
 
 //If moderator credentials are provided, use those instead. 
 if (!(typeof moderator === "undefined"))
@@ -172,18 +175,13 @@ function getDataFromLRS()
 		callback: getRegisterExtension
 	});
 	
-	/* TODO: make this work
 	if (!(typeof moderator === "undefined"))
 	{
 		console.log(moderator.loginStatementId);
 		LRSGetsDue++;
 		//get the make moderator statements
-		myTinCan.getStatement({
-			id:moderator.loginStatementId,
-			callback: getModeratorLogin
-		})
+		myTinCan.getStatement(moderator.loginStatementId,getModeratorLogin);
 	}
-	*/
 
 }
 
@@ -225,7 +223,16 @@ function getRegisterExtension (err,result){
 }
 
 function getModeratorLogin (err,result){
-	moderatorLoginStatement = result.statements;
+	//Note: this is an array of statements even though it will always be one item in order to keep it uniform with the other sets of statements 
+	//and avoid re-writting functions that cycle through arrays
+	if (!err)
+	{
+		moderatorLoginStatements = [result];
+	}
+	else
+	{
+		moderatorLoginStatements = [];
+	}
 	handleDataReturned();
 }
 
@@ -259,6 +266,13 @@ function validateStatements ()
 	recogniseExtensionStatements = validateModeratorStatements(recogniseExtensionStatements);
 	acceptExtensionStatements = validateModeratorStatements(acceptExtensionStatements);
 	
+	//validate the statement that the moderator used to log in
+	if (!(typeof moderator === "undefined"))
+	{
+		moderatorLoginStatements = validateModeratorStatements(moderatorLoginStatements);
+	}
+	//After this validation, if moderatorLoginStatements.length = 1 then login was successful. If 0, then it wasn't! 
+	
 	//Validate public statements
 	registerExtensionStatements = validatePublicStatements(registerExtensionStatements);
 	console.log (new Date().getTime() + ' Data validated.');
@@ -284,6 +298,7 @@ function validateAdministratorStatements(statements){
 function validateModeratorStatements(statements){
 	var authorisedStatements = new Array(),
 	statementsLength = statements.length;
+	
 	//cycle through the array of statements
 	for (var i = 0; i < statementsLength; i++) {
 		//get the current statement
@@ -297,7 +312,6 @@ function validateModeratorStatements(statements){
 		if ((matchingMakeModeratorStatement.success) 
 		&& ((!matchingRevokeModeratorStatement.success)||(Date.parse(matchingMakeModeratorStatement.timestamp) >= Date.parse(matchingRevokeModeratorStatement.timestamp)))){
 			authorisedStatements.push(statement);
-			console.log ('success');
 		}
 
 	}
@@ -447,7 +461,6 @@ function buildRespositoryObject (){
 	//Accept any extensions that have been accepeted after the most recent time they were reverted
 	var acceptExtensionStatementsLength = acceptExtensionStatements.length;
 	for (var i = 0; i < acceptExtensionStatementsLength; i++) {
-		console.log (i);
 		repositoryItems = modifyRepository(repositoryItems, acceptExtensionStatements[i], "accepted", ["deprecated","recognised","accepted"])
 	}
 
@@ -461,12 +474,9 @@ function modifyRepository(repositoryItems, statement, status, dontOverwrite)
 	//if the extension already exists in the repository object..
 	if (repositoryItems.hasOwnProperty(extensionId))
 	{
-		console.log ('exists');
-		console.log ($.inArray(repositoryItems[extensionId].status, dontOverwrite));
 		//if timstamp is older than the current statement and the status is ok to overwrite
 		if((Date.parse(repositoryItems[extensionId].modified) < Date.parse(statement.stored))
 		&&($.inArray(repositoryItems[extensionId].status, dontOverwrite) == -1 )){
-			console.log ('true');
 			repositoryItems[extensionId].status = status;
 			repositoryItems[extensionId].modified = statement.stored;
 		}
@@ -500,7 +510,6 @@ function sortStatementsByTimestamp(statements)
 
 
 function outputrepositoryItems(repositoryItems){
-		console.log(JSON.stringify(repositoryItems));
 	
 	var isModerator = checkIfModerator();	
 	
@@ -525,8 +534,8 @@ function outputrepositoryItems(repositoryItems){
 		
 		//Add properties header
 		
-		propertiesTable.append(propertiesTableRow('Extension type', repositoryItem.definition.type.slice(baseURI.activityTypes.length)));
-		propertiesTable.append(propertiesTableRow('Extension status', repositoryItem.status));
+		propertiesTable.append(propertiesTableRow('Type', repositoryItem.definition.type.slice(baseURI.activityTypes.length)));
+		propertiesTable.append(propertiesTableRow('Status', repositoryItem.status));
 		itemDiv.append(propertiesTable);
 		itemDiv.append('<p>' + getLangFromMapInGBOrDefault(repositoryItem.definition.description) + '</p>');
 		
@@ -550,20 +559,24 @@ function outputrepositoryItems(repositoryItems){
 			myTinCan.actor = myActor;
 			
 			//Verb
-			var verbId, verbDisplay;
+			var verbId, verbDisplay, newStatus;
 			
 			if ($(this).hasClass('accept')){
 				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/accepted_extension';
 				verbDisplay = 'accepted extension';
+				newStatus = 'accepted';
 			} else if ($(this).hasClass('recognise')){
 				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/recognised_extension';
 				verbDisplay = 'recognised extension';
+				newStatus = 'recognised';
 			} else if ($(this).hasClass('deprecate')){
 				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension';
 				verbDisplay = 'deprecate extension';
+				newStatus = 'deprecate';
 			} else if ($(this).hasClass('revert')){
 				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/reverted_extension';
 				verbDisplay = 'reverted extension';
+				newStatus = 'reverted';
 			} 
 			
 			var myVerb = new TinCan.Verb({
@@ -576,12 +589,13 @@ function outputrepositoryItems(repositoryItems){
 			 
 			
 			//Object
-			var repositoryitemToModerate = JSON.parse($(this).parents('.repositoryItemDiv').attr('data-repositoryItem')); 
-			var myActivityDefinition = new TinCan.ActivityDefinition(repositoryitemToModerate.definition);
+			var repositoryItemParentDiv = $(this).parents('.repositoryItemDiv');
+			var repositoryItemToModerate = JSON.parse(repositoryItemParentDiv.attr('data-repositoryItem')); 
+			var myActivityDefinition = new TinCan.ActivityDefinition(repositoryItemToModerate.definition);
 			
 			//Create the activity
 			var myActivity = new TinCan.Activity({
-				id : repositoryitemToModerate.id,
+				id : repositoryItemToModerate.id,
 				definition : myActivityDefinition
 			});
 			
@@ -595,7 +609,14 @@ function outputrepositoryItems(repositoryItems){
 			
 			myTinCan.sendStatement(stmt, function() {});
 			
-			//TODO: edit the div
+			//TODO: edit the div to show the result of the action 
+			//get old status from repositoryItemToModerate
+			//remove class from div
+			repositoryItemParentDiv.removeClass(repositoryItemToModerate.status);
+			//add new class to div
+			repositoryItemParentDiv.addClass(newStatus);
+			//update text of status field in the table
+			repositoryItemParentDiv.find('td.Status').text(newStatus);
 		});
 		
 		//TODO: grey out and disable buttons that do nothing
@@ -604,7 +625,7 @@ function outputrepositoryItems(repositoryItems){
 }
 
 function propertiesTableRow (label,value){
-	return '<tr><td class="label grey">' + label + ':</td><td class="grey2">' + value + '</td></tr>';
+	return '<tr><td class="label grey">' + label + ':</td><td class="grey2 ' + label + '">' + value + '</td></tr>';
 }
 
 function moderatorButton (action, itemId){
@@ -613,13 +634,14 @@ function moderatorButton (action, itemId){
 
 function checkIfModerator()
 {
-	if (typeof moderator === "undefined") 
+	//If no moderator credentials were provided, or if we were unable to verify the log in statement, then the user is not a moderator.
+	//Note: in the event of a delay between sending the statement and the LRS returning it, the user can simply refresh the page to re-check moderator status based on their earlier login
+	if ((typeof moderator === "undefined") || (moderatorLoginStatements.length == 0))
 	{
 		return false;
 	}
 	else
 	{
-		//TODO: check if the moderator statement has been recorded in the LRS and if the authority is a moderator (use the validateModeratorStatements function and pass in an array of statements)
 		return true;
 	}
 

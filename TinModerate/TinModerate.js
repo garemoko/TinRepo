@@ -14,6 +14,9 @@ GNU General Public License for more details.
 <http://www.gnu.org/licenses/>.
 */
 
+//TODO: For security, embed this form within TinReport so that credentials are not passed in querystrings!!!
+//TODO: if you enter the wrong credentials, fail gracefully and politely. 
+
 //Create an instance of the Tin Can Library
 var myTinCan = new TinCan();
 myTinCan.DEBUG = 1;
@@ -127,5 +130,5 @@ function SendILoggedInStatement(launchLink, StatementId)
 	console.log ('sending: ' + JSON.stringify(stmt));
 	
 	//send statement and launch moderator interface
-	myTinCan.sendStatement(stmt, function() {window.open(launchLink)});
+	myTinCan.sendStatement(stmt, function() {window.location.href=launchLink});
 }
