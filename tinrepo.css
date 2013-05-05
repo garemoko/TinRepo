@@ -78,8 +78,16 @@ font-weight:bold;
 	
 }
 .button:hover {
-
 	background-color: #DDCEF2;
+}
+.disabled_button
+{
+	background-color: #ccc;
+	border-color: #ccc;
+	color: #ddd;
+}
+.disabled_button:hover {
+	background-color: #ccc;
 }
 
 .displayNone {
