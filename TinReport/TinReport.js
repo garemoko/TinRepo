@@ -47,6 +47,7 @@ var LRSGetsCompleted = 0,
 LRSGetsDue=7;
 
 
+//TODO: get this data from the repository itself #recursion
 //Define legal activity types (see profile)
 var legalActivityTypes = [
 	"http://tincanapi.co.uk/tinrepo/activitytypes/verb",
@@ -60,6 +61,30 @@ var legalActivityTypes = [
 	"http://tincanapi.co.uk/tinrepo/activitytypes/activity_profile_api_document",
 	"http://tincanapi.co.uk/tinrepo/activitytypes/repository"
 ];
+
+//TODO: get this data from the repository itself #recursion
+var extensionManagementVerbsList = {
+	"http://tincanapi.co.uk/tinrepo/verbs/reverted_extension" : {
+		status : "reverted",
+		display : "reverted extension"
+		},
+	"http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension": {
+		status : "deprecated",
+		display : "deprecated extension"
+		},
+	"http://tincanapi.co.uk/tinrepo/verbs/recognised_extension": {
+		status : "recognised",
+		display : "recognised extension"
+		},
+	"http://tincanapi.co.uk/tinrepo/verbs/accepted_extension": {
+		status : "accepted",
+		display : "accepted extension"
+		},
+	"http://tincanapi.co.uk/tinrepo/verbs/registered_extension": {
+		status : "registered",
+		display : "registered extension"
+		}
+}
 
 //BaseURI
 var baseURI = {};
@@ -88,7 +113,7 @@ myLRS.alertOnRequestFailure = false;
 //If moderator credentials are provided, use those instead. 
 if (!(typeof moderator === "undefined"))
 {
-	myLRS.auth = 'Basic ' + Base64.encode(moderator.credentials.login + ':' + moderator.credentials.pass)
+	myLRS.auth = moderator.credentials
 }
 
 myTinCan.recordStores[0] = myLRS;
@@ -177,7 +202,6 @@ function getDataFromLRS()
 	
 	if (!(typeof moderator === "undefined"))
 	{
-		console.log(moderator.loginStatementId);
 		LRSGetsDue++;
 		//get the make moderator statements
 		myTinCan.getStatement(moderator.loginStatementId,getModeratorLogin);
@@ -545,82 +569,20 @@ function outputrepositoryItems(repositoryItems){
 	//Add funtionality to moderator buttons
 	if (isModerator)
 	{
-		$('.moderatorButton').click(function(){
-			
-			//send a statement carrying out the action
-			//object - look up details of activity in repository items based on id of parent div (Note, this is URI encoded). 
-			//repositoryItems may need to be refactored as a global variable. 
-			//$(this).parents.('.repositoryItemDiv').attr('id'); 
-			//LRS - built using the standard enpoint and moderator.credentials
-			
-
-			//Actor
-			var myActor = moderator.actor;
-			myTinCan.actor = myActor;
-			
-			//Verb
-			var verbId, verbDisplay, newStatus;
-			
-			if ($(this).hasClass('accept')){
-				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/accepted_extension';
-				verbDisplay = 'accepted extension';
-				newStatus = 'accepted';
-			} else if ($(this).hasClass('recognise')){
-				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/recognised_extension';
-				verbDisplay = 'recognised extension';
-				newStatus = 'recognised';
-			} else if ($(this).hasClass('deprecate')){
-				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension';
-				verbDisplay = 'deprecate extension';
-				newStatus = 'deprecate';
-			} else if ($(this).hasClass('revert')){
-				verbId = 'http://tincanapi.co.uk/tinrepo/verbs/reverted_extension';
-				verbDisplay = 'reverted extension';
-				newStatus = 'reverted';
-			} 
-			
-			var myVerb = new TinCan.Verb({
-				id : verbId,
-				display : {
-					"en-GB" : verbDisplay,
-					"en-US" : verbDisplay
-				}
-			});
-			 
-			
-			//Object
-			var repositoryItemParentDiv = $(this).parents('.repositoryItemDiv');
-			var repositoryItemToModerate = JSON.parse(repositoryItemParentDiv.attr('data-repositoryItem')); 
-			var myActivityDefinition = new TinCan.ActivityDefinition(repositoryItemToModerate.definition);
-			
-			//Create the activity
-			var myActivity = new TinCan.Activity({
-				id : repositoryItemToModerate.id,
-				definition : myActivityDefinition
-			});
-			
-			var stmt = new TinCan.Statement({
-				actor : deleteEmptyProperties(myActor),
-				verb : deleteEmptyProperties(myVerb),
-				target : deleteEmptyProperties(myActivity)
-			},true);
-			
-			console.log ('sending: ' + JSON.stringify(stmt));
-			
-			myTinCan.sendStatement(stmt, function() {});
-			
-			//Edit the div to show the result of the action 
-			//TODO: only update the status based on the rules in the profile. 
-			//get old status from repositoryItemToModerate
-			//remove class from div
-			repositoryItemParentDiv.removeClass(repositoryItemToModerate.status);
-			//add new class to div
-			repositoryItemParentDiv.addClass(newStatus);
-			//update text of status field in the table
-			repositoryItemParentDiv.find('td.Status').text(newStatus);
+		//TODO: grey out and disable buttons that do nothing
+		
+		$('.moderatorButton').each(function(index){
+			var repositoryItemToModerate = JSON.parse($(this).parents('.repositoryItemDiv').attr('data-repositoryItem'));
+			if (IsAllowableModeratorAction (repositoryItemToModerate.status, $(this).attr('data-action'))){
+			$(this).click(sendModeratorAction);
+			}
+			else
+			{
+				//TODO: hide or grey out buttons
+			}
 		});
 		
-		//TODO: grey out and disable buttons that do nothing
+		
 	}
 	
 }
@@ -629,8 +591,10 @@ function propertiesTableRow (label,value){
 	return '<tr><td class="label grey">' + label + ':</td><td class="grey2 ' + label + '">' + value + '</td></tr>';
 }
 
+
+//==============MODERATOR BUTTON FUNCTIONS=====================
 function moderatorButton (action, itemId){
-	return '<input type="button" value="' + capitaliseFirstLetter(action) + '" name="' + itemId + '_' + action + '" id="' + itemId + '_' + action + '" class="button moderatorButton ' + action + ' Extension" /> ';
+	return '<input type="button" value="' + capitaliseFirstLetter(action) + '" name="' + itemId + '_' + action + '" id="' + itemId + '_' + action + '" class="button moderatorButton ' + action + ' Extension" data-action="' + action + '" /> ';
 }
 
 function checkIfModerator()
@@ -646,6 +610,123 @@ function checkIfModerator()
 		return true;
 	}
 
+}
+
+function sendModeratorAction()
+{
+			
+	//send a statement carrying out the action
+	//object - look up details of activity in repository items based on id of parent div (Note, this is URI encoded). 
+	
+	//Actor
+	var myActor = moderator.actor;
+	myTinCan.actor = myActor;
+	
+	//Verb
+	var verbId;
+	
+	if ($(this).hasClass('accept')){
+		verbId = 'http://tincanapi.co.uk/tinrepo/verbs/accepted_extension';
+	} else if ($(this).hasClass('recognise')){
+		verbId = 'http://tincanapi.co.uk/tinrepo/verbs/recognised_extension';
+	} else if ($(this).hasClass('deprecate')){
+		verbId = 'http://tincanapi.co.uk/tinrepo/verbs/deprecated_extension';
+	} else if ($(this).hasClass('revert')){
+		verbId = 'http://tincanapi.co.uk/tinrepo/verbs/reverted_extension';
+	} 
+	
+	var myVerb = new TinCan.Verb({
+		id : verbId,
+		display : {
+			"en-GB" : extensionManagementVerbsList[verbId].display,
+			"en-US" : extensionManagementVerbsList[verbId].display
+		}
+	});
+	 
+	
+	//Object
+	var repositoryItemParentDiv = $(this).parents('.repositoryItemDiv');
+	var repositoryItemToModerate = JSON.parse(repositoryItemParentDiv.attr('data-repositoryItem')); 
+	var myActivityDefinition = new TinCan.ActivityDefinition(repositoryItemToModerate.definition);
+	
+	//Create the activity
+	var myActivity = new TinCan.Activity({
+		id : repositoryItemToModerate.id,
+		definition : myActivityDefinition
+	});
+	
+	var stmt = new TinCan.Statement({
+		actor : deleteEmptyProperties(myActor),
+		verb : deleteEmptyProperties(myVerb),
+		target : deleteEmptyProperties(myActivity)
+	},true);
+	
+	console.log ('sending: ' + JSON.stringify(stmt));
+	
+	myTinCan.sendStatement(stmt, updateRepositoryItemAfterModeratorModification);
+	
+}
+
+function updateRepositoryItemAfterModeratorModification(response,result)
+{
+	if (response[0].err)
+	{
+		console.log ('failed to send moderator statement')
+		//Notify user and/or try again
+	}
+	else
+	{
+		//escape percentages (from url encoding) and periods (from .com etc.) in the id. 
+		repositoryItemParentDiv = $('#' + encodeURIComponent(result.target.id).replace(/\./g,'\\.').replace(/\%/g,'\\%'));
+		//Edit the div to show the result of the action 
+		//TODO: only update the status based on the rules in the profile. 
+		var newStatus = extensionManagementVerbsList[result.verb.id].status;
+		//update the class of the div
+		repositoryItemParentDiv.attr("class","section repositoryItemDiv " + result.target.definition.type + ' ' + newStatus)
+		//update text of status field in the table
+		repositoryItemParentDiv.find('td.Status').text(newStatus);
+		
+		//TODO: update which buttons are active. 
+	}
+}
+
+function IsAllowableModeratorAction (currentStatus, action)
+{
+	var allowableModeratorActions =
+	{
+		registered : {
+			accept : true,
+			recognise: true,
+			revert : false,
+			deprecate : true
+		},
+		accepted : {
+			accept : false,
+			recognise: true,
+			revert : true,
+			deprecate : true
+		}, 
+		recognised : {
+			accept : false,
+			recognise: false,
+			revert : true,
+			deprecate : true
+		}, 
+		deprecated : {
+			accept : false,
+			recognise: false,
+			revert : true,
+			deprecate : false
+		}, 
+		reverted : {
+			accept : true,
+			recognise: true,
+			revert : false,
+			deprecate : true
+		}
+	}
+
+	return allowableModeratorActions[currentStatus][action];
 }
 
 

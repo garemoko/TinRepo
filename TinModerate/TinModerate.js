@@ -14,7 +14,6 @@ GNU General Public License for more details.
 <http://www.gnu.org/licenses/>.
 */
 
-//TODO: For security, embed this form within TinReport so that credentials are not passed in querystrings!!!
 //TODO: if you enter the wrong credentials, fail gracefully and politely. 
 
 //Create an instance of the Tin Can Library
@@ -45,11 +44,9 @@ $(function(){
 function launchModeratorUI()
 {
 	var UUID = TinCan.Utils.getUUID();
+	var credentials = 'Basic ' + Base64.encode($('.basicLogin').val() + ':' + $('.basicPass').val());
 	var launchString = {
-		credentials : {
-			login : $('.basicLogin').val(),
-			pass : $('.basicPass').val()
-		},
+		credentials : encodeURIComponent(credentials),
 		actor : {
 			objectType:"Agent",
 			account:
@@ -61,11 +58,11 @@ function launchModeratorUI()
 		loginStatementId : UUID
 	};
 	
-	SendILoggedInStatement('../TinReport/tinreport.htm?params=' + JSON.stringify(launchString), UUID);
+	SendILoggedInStatement('../TinReport/tinreport.htm?params=' + JSON.stringify(launchString), UUID, credentials);
 
 }
 
-function SendILoggedInStatement(launchLink, StatementId)
+function SendILoggedInStatement(launchLink, StatementId, auth)
 {
 
 	
@@ -74,7 +71,7 @@ function SendILoggedInStatement(launchLink, StatementId)
 		var myLRS = new TinCan.LRS({
 			endpoint:"https://mrandrewdownes.waxlrs.com/TCAPI/",
 			version: "0.95",
-			auth: 'Basic ' + Base64.encode($(this).find('.basicLogin').val() + ':' + $(this).find('.basicPass').val())
+			auth: auth
 		});
 		myTinCan.recordStores[index] = myLRS;
 	});
@@ -130,5 +127,7 @@ function SendILoggedInStatement(launchLink, StatementId)
 	console.log ('sending: ' + JSON.stringify(stmt));
 	
 	//send statement and launch moderator interface
-	myTinCan.sendStatement(stmt, function() {window.location.href=launchLink});
+	myTinCan.sendStatement(stmt, function() {
+		window.location.href=launchLink
+		});
 }
