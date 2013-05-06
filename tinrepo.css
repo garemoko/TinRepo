@@ -94,3 +94,6 @@ font-weight:bold;
 	display: none;
 }
 
+.errorText{
+	color:red;
+}

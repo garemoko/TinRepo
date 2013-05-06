@@ -48,8 +48,10 @@ $(function(){
 	$('#activityDescriptionRemove').click({elementId: 'activity', propertyClass: 'description', minimum:0},removeProperty);
 
 
-	//send statement
+	//Add events to buttons
 	$('#sendStatement').click(statementGeneratorSendStatement);
+	$('#addAnother').click(hideFeedback);
+	$('#toTheRepository').click(launchRepository);
 	
 	//Set debug defaults
 	var setDebugDefaults = true;
@@ -86,6 +88,9 @@ function statementGeneratorSendStatement()
 		version: '0.95',
 		auth: 'Basic ' + Base64.encode('uomcAcOeWBxCF6NvWUDh' + ':' + 'Weyr9VvZoGKic40lzNTv')
 	});
+	//don't pop up alerts on errors. 
+	myLRS.alertOnRequestFailure = false;
+
 	myTinCan.recordStores[0]= myLRS;
 	
 	switch($('#actorObjectType').val())
@@ -148,15 +153,66 @@ function statementGeneratorSendStatement()
 	myTarget = myActivity;
 	
 	var stmt = new TinCan.Statement({
-		actor : deleteEmptyProperties(myActor),
-		verb : deleteEmptyProperties(myVerb),
-		target : deleteEmptyProperties(myTarget)
+		actor : myActor,
+		verb : myVerb,
+		target : myTarget
 	},true);
 	
 	console.log ('sending: ' + JSON.stringify(stmt));
 	
 	//TODO: add callback confirming that the extension has been registered. 
-	myTinCan.sendStatement(stmt, function(err, xhr) {
-	});
+	try{
+		myTinCan.sendStatement(stmt, statementSent);
+	}
+	catch (err)
+	{
+		//mimic the relevant bit of the returned http response 
+		statementSent([{
+			err : 'JS error',
+			xhr : {responseText : '<p>JavaScript error: ' + err.message + '</p>'}
+		}],null);
+	}
 }
+
+//handle statement sending result
+function statementSent (err,result){
+	console.log(err);
+	console.log(result);
+	//hide all section divs
+	$("div.section").addClass("displayNone");
+	$("#sendStatement").addClass("displayNone");
+	//show result div
+	$("#feedback").removeClass("displayNone");
+	//display an appropriate message
+	if (!err[0].err){
+		$("#feedback").find(".background_div").text('Success');
+		$("#feedback").find("h2").text('Item added');
+		$("#feedback").find("p").html('Congratulations, your item has been added to the respository.</p><p> Click <strong>Back</strong> to add another item. Click <strong>Onwards!</strong> to continue to the repository.');
+	}
+	else
+	{
+		var errorText;
+		errorText = $(err[0].xhr.responseText).text();
+		$("#feedback").find(".background_div").text('Error');
+		$("#feedback").find("h2").text('Adding item failed');
+		$("#feedback").find("p").html('An error has occured. Please make sure you are conencted to the internet and that you completed all the fields correctly. The error message was:</p><p class="errorText">'+ errorText +'</p><p> Click <strong>Back</strong> to try again. Click <strong>Onwards!</strong> to continue to the repository anyway.');
+
+	}
+
+}
+
+function hideFeedback()
+{
+	//show all section divs
+	$("div.section").removeClass("displayNone");
+	$("#sendStatement").removeClass("displayNone");
+	//hide result div
+	$("#feedback").addClass("displayNone");
+}
+
+function launchRepository()
+{
+	window.location.href = "../TinReport/tinreport.htm";
+}
+
 
